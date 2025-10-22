@@ -35,7 +35,6 @@ const Search = () => {
     setError(null)
     
     try {
-      // Call backend search API
       const response = await apiClient.get(`/search?q=${encodeURIComponent(query)}`)
       
       if (response.data) {
@@ -64,10 +63,8 @@ const Search = () => {
     if (items.length === 0) return null
 
     const renderItem = (item, index) => {
-      // Map backend data structure to component props
       const mappedItem = {
         ...item,
-        // Ensure consistent field names for different data types
         title: item.title || item.name || item.trackName,
         artist: item.artist || item.artistName || item.performer,
         album: item.album || item.albumName,

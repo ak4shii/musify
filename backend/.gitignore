@@ -33,9 +33,9 @@ build/
 .vscode/
 
 ### Directories ###
-sql/
-static/
-log/
+src/main/resources/sql/
+src/main/resources/static/
+src/main/resources/log/
 
 ### Files ###
 .env

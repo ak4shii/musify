@@ -6,5 +6,7 @@ import java.util.List;
 
 public interface IArtistService {
 
-    List<ArtistDto> getArtists();
+    List<ArtistDto> getArtistsForHome();
+
+    List<ArtistDto> getArtistsForSearch(String query);
 }

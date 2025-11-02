@@ -1,11 +1,44 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from '../contexts/AuthContext';
 
 import { assets } from '../assets/assets'
 
 const Header = () => {
+  const { user, isAuthenticated, logout } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const q = params.get('q') || ''
+    setSearchQuery(q)
+  }, [location.search])
+
+  useEffect(() => {
+    if (location.pathname === '/search') {
+      const currentQuery = new URLSearchParams(location.search).get('q') || ''
+      const trimmedQuery = searchQuery.trim()
+      
+      if (currentQuery !== trimmedQuery) {
+        const timer = setTimeout(() => {
+          if (trimmedQuery) {
+            navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`, { replace: true })
+          } else {
+            navigate('/search', { replace: true })
+          }
+        }, 300)
+
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [searchQuery, location.pathname, location.search, navigate])
 
   const handleSearch = (e) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
@@ -39,10 +72,29 @@ const Header = () => {
           <Link to="/support" className='text-sm text-[#b3b3b3] hover:text-white'>
             Support
           </Link>
-          <div className='flex items-center gap-2'>
-            <Link to="/login" className='px-4 py-1.5 rounded-full bg-transparent border border-white/30 text-sm'>Log in</Link>
-            <Link to="/register" className='px-4 py-1.5 rounded-full bg-white text-black text-sm font-semibold'>Sign up</Link>
-          </div>
+          {isAuthenticated ? (
+            <div className='flex items-center gap-3'>
+              {user?.profileUrl && (
+                <img 
+                  src={user.profileUrl} 
+                  alt={user.userName || user.email} 
+                  className='w-8 h-8 rounded-full object-cover'
+                />
+              )}
+              <span className='text-sm text-white'>{user?.userName || user?.email}</span>
+              <button 
+                onClick={handleLogout}
+                className='px-4 py-1.5 rounded-full bg-transparent border border-white/30 text-sm hover:bg-white/10 transition-colors'
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <div className='flex items-center gap-2'>
+              <Link to="/login" className='px-4 py-1.5 rounded-full bg-transparent border border-white/30 text-sm'>Log in</Link>
+              <Link to="/register" className='px-4 py-1.5 rounded-full bg-white text-black text-sm font-semibold'>Sign up</Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

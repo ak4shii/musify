@@ -13,4 +13,5 @@ public class AlbumDto {
     private String title;
     private String coverUrl;
     private LocalDate releaseDate;
+    private Integer popularity;
 }

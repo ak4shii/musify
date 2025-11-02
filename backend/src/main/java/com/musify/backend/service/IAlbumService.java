@@ -6,5 +6,7 @@ import java.util.List;
 
 public interface IAlbumService {
 
-    List<AlbumDto> getAlbums();
+    List<AlbumDto> getAlbumsForHome();
+
+    List<AlbumDto> getAlbumsForSearch(String query);
 }

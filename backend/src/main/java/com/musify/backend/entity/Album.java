@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 
@@ -29,4 +30,8 @@ public class Album extends BaseEntity {
 
     @Column(name = "release_date")
     private LocalDate releaseDate;
+
+    @ColumnDefault("0")
+    @Column(name = "popularity")
+    private Integer popularity;
 }

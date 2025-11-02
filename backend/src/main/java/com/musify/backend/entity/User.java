@@ -7,12 +7,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "\"user\"")
 public class User extends BaseEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id", nullable = false)
@@ -25,7 +26,7 @@ public class User extends BaseEntity {
 
     @Size(max = 150)
     @NotNull
-    @Column(name = "email", nullable = false, length = 150)
+    @Column(name = "email", nullable = false, length = 150, unique = true)
     private String email;
 
     @NotNull
@@ -39,6 +40,10 @@ public class User extends BaseEntity {
 
     @Column(name = "profile_url", length = Integer.MAX_VALUE)
     private String profileUrl;
+
+    @NotNull
+    @Column(name = "date_of_birth", nullable = false)
+    private LocalDate dateOfBirth;
 
     @ColumnDefault("true")
     @Column(name = "enabled")

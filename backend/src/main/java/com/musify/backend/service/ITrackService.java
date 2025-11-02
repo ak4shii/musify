@@ -6,5 +6,7 @@ import java.util.List;
 
 public interface ITrackService {
 
-    List<TrackDto> getTracks();
+    List<TrackDto> getTracksForHome();
+
+    List<TrackDto> getTracksForSearch(String query);
 }

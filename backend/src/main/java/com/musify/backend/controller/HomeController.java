@@ -27,9 +27,9 @@ public class HomeController {
 
     @GetMapping
     public ResponseEntity<HomeResponseDto> getHomeData() {
-        List<TrackDto> tracks = iTrackService.getTracks();
-        List<AlbumDto> albums = iAlbumService.getAlbums();
-        List<ArtistDto> artists = iArtistService.getArtists();
+        List<TrackDto> tracks = iTrackService.getTracksForHome();
+        List<AlbumDto> albums = iAlbumService.getAlbumsForHome();
+        List<ArtistDto> artists = iArtistService.getArtistsForHome();
 
         return ResponseEntity.status(HttpStatus.OK).
                 body(new HomeResponseDto(tracks, albums, artists));

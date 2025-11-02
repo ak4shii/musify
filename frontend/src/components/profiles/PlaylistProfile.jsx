@@ -2,7 +2,7 @@ import React from 'react'
 
 const PlaylistProfile = ({ playlist, index }) => {
   return (
-    <div className='bg-[#181818] rounded p-4 min-w-[180px] snap-start'>
+    <div className='bg-[#181818] rounded p-4 min-w-[180px] snap-start group hover:bg-[#242424] transition-colors duration-200'>
       <div className='w-full aspect-square rounded bg-[#2a2a2a] mb-3'>
         {playlist?.image && (
           <img 
@@ -22,6 +22,11 @@ const PlaylistProfile = ({ playlist, index }) => {
 }
 
 export default PlaylistProfile
+
+
+
+
+
 
 
 

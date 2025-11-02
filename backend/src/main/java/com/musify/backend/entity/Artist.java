@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 @Getter
 @Setter
@@ -27,4 +28,8 @@ public class Artist extends BaseEntity {
 
     @Column(name = "biography", length = Integer.MAX_VALUE)
     private String biography;
+
+    @ColumnDefault("0")
+    @Column(name = "popularity")
+    private Integer popularity;
 }

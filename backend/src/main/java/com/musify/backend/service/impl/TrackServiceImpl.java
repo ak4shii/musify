@@ -6,6 +6,7 @@ import com.musify.backend.repository.TrackRepository;
 import com.musify.backend.service.ITrackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,8 +19,14 @@ public class TrackServiceImpl implements ITrackService {
     private final TrackRepository trackRepository;
 
     @Override
-    public List<TrackDto> getTracks() {
-        return trackRepository.findAll().stream()
+    public List<TrackDto> getTracksForHome() {
+        return trackRepository.findTop10ByOrderByPopularityDesc().stream()
+                .map(this::transformToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TrackDto> getTracksForSearch(String query) {
+        return trackRepository.findTopByTitleContainingIgnoreCaseOrderByPopularityDesc(query, PageRequest.of(0, 10)).stream()
                 .map(this::transformToDto).collect(Collectors.toList());
     }
 

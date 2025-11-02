@@ -40,6 +40,7 @@ public class Track extends BaseEntity {
     @Size(max = 100)
     @Column(name = "genre", length = 100)
     private String genre;
+
     @ColumnDefault("0")
     @Column(name = "popularity")
     private Integer popularity;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import apiClient from "../helpers/apiClient";
+import { useAuth } from "../contexts/AuthContext";
 
 import Sidebar from '../components/Sidebar';
 import Player from '../components/Player';
@@ -7,7 +8,7 @@ import Header from '../components/Header';
 import Display from '../components/Display';
 
 const Home = () => {
-
+  const { user, isAuthenticated } = useAuth();
   const [songs, setSongs] = useState([]);
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
@@ -20,7 +21,11 @@ const Home = () => {
         setLoading(true);
         setError(null);
         
-        const response = await apiClient.get('/');
+        const response = await apiClient.get('/', {
+          headers: isAuthenticated ? {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          } : {}
+        });
         
         if (response.data) {
           setSongs(response.data.tracks || []);
@@ -38,7 +43,7 @@ const Home = () => {
     };
 
     fetchData();
-  }, []);
+  }, [isAuthenticated, user]);
 
   return (
     <div className='h-screen bg-black text-white'>

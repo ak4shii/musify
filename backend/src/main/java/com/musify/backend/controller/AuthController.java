@@ -94,6 +94,7 @@ public class AuthController {
         user.setPasswordHash(passwordEncoder.encode(registerRequestDto.getPassword()));
         user.setRole("ROLE_USER");
         user.setCreatedBy(registerRequestDto.getEmail());
+        user.setEnabled(true);
         userRepository.save(user);
         return ResponseEntity.status(HttpStatus.CREATED).body("Register successfully");
     }

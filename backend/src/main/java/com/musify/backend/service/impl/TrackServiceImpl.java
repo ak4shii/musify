@@ -2,6 +2,7 @@ package com.musify.backend.service.impl;
 
 import com.musify.backend.dto.TrackDto;
 import com.musify.backend.entity.Track;
+import com.musify.backend.repository.TrackArtistRepository;
 import com.musify.backend.repository.TrackRepository;
 import com.musify.backend.service.ITrackService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 public class TrackServiceImpl implements ITrackService {
 
     private final TrackRepository trackRepository;
+    private final TrackArtistRepository trackArtistRepository;
 
     @Override
     public List<TrackDto> getTracksForHome() {
@@ -30,9 +32,24 @@ public class TrackServiceImpl implements ITrackService {
                 .map(this::transformToDto).collect(Collectors.toList());
     }
 
+    @Override
+    public List<TrackDto> getTracksByArtistId(Long artistId) {
+        return trackArtistRepository.findTracksByArtistId(artistId).stream()
+                .map(this::transformToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TrackDto> getTracksByAlbumId(Long albumId) {
+        return trackRepository.findTracksByAlbumId(albumId).stream()
+                .map(this::transformToDto).collect(Collectors.toList());
+    }
+
     private TrackDto transformToDto(Track track) {
         TrackDto trackDto = new TrackDto();
         BeanUtils.copyProperties(track, trackDto);
+        if (track.getAlbum() != null) {
+            trackDto.setAlbumId(track.getAlbum().getAlbumId());
+        }
         return trackDto;
     }
 }

@@ -31,4 +31,25 @@ export const getImageUrl = (imagePath) => {
     }
 };
 
+export const resolveMediaUrl = (maybeRelative) => {
+    if (!maybeRelative) return null;
+    try {
+        new URL(maybeRelative);
+        return maybeRelative;
+    } catch {
+        const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+        let cleanPath = String(maybeRelative).replace(/^\/+/, '');
+        if (!cleanPath.startsWith('static/')) {
+            cleanPath = 'static/' + cleanPath;
+        }
+        try {
+            const finalUrl = new URL(cleanPath, baseURL + '/');
+            return finalUrl.toString();
+        } catch {
+            const encodedParts = cleanPath.split('/').map(part => encodeURIComponent(part));
+            return `${baseURL}/${encodedParts.join('/')}`;
+        }
+    }
+};
+
 export default apiClient;

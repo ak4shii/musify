@@ -1,28 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useMemo, useRef, useState, useCallback, useEffect } from "react";
+import apiClient, { resolveMediaUrl } from "../helpers/apiClient";
 
 const PlayerContext = createContext(null);
-
-const resolveMediaUrl = (maybeRelative) => {
-  if (!maybeRelative) return null;
-  try {
-    new URL(maybeRelative);
-    return maybeRelative;
-  } catch {
-    const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-
-    let cleanPath = maybeRelative.replace(/^\/+/, "");
-    if (!cleanPath.startsWith("static/")) {
-      cleanPath = "static/" + cleanPath;
-    }
-
-    const encodedParts = cleanPath.split("/").map((part) => encodeURIComponent(part));
-    const encodedPath = encodedParts.join("/");
-
-    return `${baseURL}/${encodedPath}`;
-  }
-};
-
-
 
 const pickAudioSource = (track) => {
   if (!track) return null;
@@ -41,6 +21,11 @@ const pickAudioSource = (track) => {
   return null;
 }
 
+const resolveTrackNumericId = (track) => {
+  if (!track || typeof track !== 'object') return null;
+  return track.trackId ?? track.id ?? null;
+};
+
 export const PlayerProvider = ({ children }) => {
   const audioRef = useRef(null);
   const previousAudioSrcRef = useRef(null);
@@ -49,6 +34,71 @@ export const PlayerProvider = ({ children }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.7);
+  const [previousVolume, setPreviousVolume] = useState(0.7);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState('off');
+  const [trackPool, setTrackPool] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadPool = async () => {
+      try {
+        const headers = {};
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await apiClient.get('/', { headers });
+        const pool = res?.data?.tracks || [];
+        if (isMounted) setTrackPool(pool);
+      } catch (err) {
+        console.warn('Unable to load track pool for random next:', err?.message || err);
+      }
+    };
+    loadPool();
+    return () => { isMounted = false; };
+  }, []);
+
+  const pickRandomFromPool = useCallback((exclude) => {
+    if (!trackPool || trackPool.length === 0) return null;
+    const excludeId = exclude?.id ?? exclude?.trackId ?? exclude?.filePath ?? exclude?.file_path ?? null;
+    const candidates = trackPool.filter(t => {
+      const tId = t?.id ?? t?.trackId ?? t?.filePath ?? t?.file_path ?? null;
+      return excludeId == null || tId !== excludeId;
+    });
+    if (candidates.length === 0) return null;
+    const idx = Math.floor(Math.random() * candidates.length);
+    return candidates[idx];
+  }, [trackPool]);
+
+  const logPlayback = useCallback(async (track) => {
+    try {
+      if (typeof window === 'undefined') return;
+      const trackId = resolveTrackNumericId(track);
+      if (trackId == null) return;
+
+      let userId = null;
+      try {
+        const storedUser = window.localStorage.getItem('user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          if (parsed?.userId != null) userId = parsed.userId;
+          else if (parsed?.id != null) userId = parsed.id;
+        }
+      } catch (err) {
+        console.warn('Failed to parse stored user for playback history', err);
+      }
+      if (userId == null) {
+        const fallback = window.localStorage.getItem('userId');
+        if (fallback != null) userId = Number(fallback);
+      }
+      if (userId == null) return;
+
+      const token = window.localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await apiClient.post(`/users/${userId}/play/${trackId}`, {}, { headers });
+    } catch (error) {
+      console.warn('Unable to record playback history', error);
+    }
+  }, []);
 
   const playTrack = useCallback((track) => {
     if (!track) return;
@@ -75,13 +125,22 @@ export const PlayerProvider = ({ children }) => {
       }
     }
     
+    logPlayback(track);
     setCurrentTrack(track);
     setCurrentTime(0);
     setIsPlaying(true);
-  }, [currentTrack]);
+  }, [currentTrack, logPlayback]);
 
   const togglePlayPause = useCallback(() => {
     setIsPlaying((prev) => !prev);
+  }, []);
+
+  const toggleShuffle = useCallback(() => {
+    setIsShuffle((prev) => !prev);
+  }, []);
+
+  const toggleRepeat = useCallback(() => {
+    setRepeatMode((prev) => (prev === 'off' ? 'one' : 'off'));
   }, []);
 
   const audioSrc = useMemo(() => {
@@ -155,8 +214,23 @@ export const PlayerProvider = ({ children }) => {
       setDuration(newDuration);
     };
     const onEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
+      if (repeatMode === 'one') {
+        audioEl.currentTime = 0;
+        audioEl.play().catch((err) => {
+          console.error('Error replaying on repeat-one:', err);
+          setIsPlaying(false);
+        });
+        return;
+      }
+      const randomNext = pickRandomFromPool(currentTrack);
+      if (randomNext) {
+        setCurrentTrack(randomNext);
+        setCurrentTime(0);
+        setIsPlaying(true);
+      } else {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      }
     };
 
     audioEl.addEventListener('timeupdate', onTime);
@@ -186,7 +260,7 @@ export const PlayerProvider = ({ children }) => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [volume, isPlaying]);
+  }, [volume, isPlaying, repeatMode, pickRandomFromPool, currentTrack]);
 
   const seekTo = useCallback((timeSec) => {
     const audioEl = audioRef.current;
@@ -197,14 +271,58 @@ export const PlayerProvider = ({ children }) => {
   const changeVolume = useCallback((v) => {
     const clamped = Math.max(0, Math.min(1, v));
     setVolume(clamped);
+    if (clamped > 0) setPreviousVolume(clamped);
     if (audioRef.current) audioRef.current.volume = clamped;
   }, []);
+
+  const toggleMute = useCallback(() => {
+    setVolume((current) => {
+      const next = current > 0 ? 0 : (previousVolume > 0 ? previousVolume : 0.7);
+      if (audioRef.current) audioRef.current.volume = next;
+      return next;
+    });
+    setPreviousVolume((pv) => (volume > 0 ? volume : (pv > 0 ? pv : 0.7)));
+  }, [previousVolume, volume]);
+
+  const playPrevious = useCallback(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+    if (audioEl.currentTime > 3) {
+      audioEl.currentTime = 0;
+      setCurrentTime(0);
+    } else {
+      audioEl.currentTime = 0;
+      setCurrentTime(0);
+      setIsPlaying(false);
+      audioEl.pause();
+    }
+  }, []);
+
+  const playNext = useCallback(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+    const randomNext = pickRandomFromPool(currentTrack);
+    if (randomNext) {
+      setCurrentTrack(randomNext);
+      setCurrentTime(0);
+      setIsPlaying(true);
+    } else {
+      audioEl.currentTime = 0;
+      setCurrentTime(0);
+      setIsPlaying(false);
+      audioEl.pause();
+    }
+  }, [pickRandomFromPool, currentTrack]);
 
   const value = useMemo(() => ({
     currentTrack,
     isPlaying,
     playTrack,
     togglePlayPause,
+    toggleShuffle,
+    toggleRepeat,
+    isShuffle,
+    repeatMode,
     audioRef,
     audioSrc,
     currentTime,
@@ -212,7 +330,10 @@ export const PlayerProvider = ({ children }) => {
     seekTo,
     volume,
     changeVolume,
-  }), [currentTrack, isPlaying, playTrack, togglePlayPause, audioSrc, currentTime, duration, seekTo, volume, changeVolume]);
+    toggleMute,
+    playPrevious,
+    playNext,
+  }), [currentTrack, isPlaying, playTrack, togglePlayPause, toggleShuffle, toggleRepeat, isShuffle, repeatMode, audioSrc, currentTime, duration, seekTo, volume, changeVolume, toggleMute, playPrevious, playNext]);
 
   console.log("Audio source:", audioSrc);
 

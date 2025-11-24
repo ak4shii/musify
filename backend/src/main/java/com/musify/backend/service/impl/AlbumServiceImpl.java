@@ -2,6 +2,7 @@ package com.musify.backend.service.impl;
 
 import com.musify.backend.dto.AlbumDto;
 import com.musify.backend.entity.Album;
+import com.musify.backend.repository.AlbumArtistRepository;
 import com.musify.backend.repository.AlbumRepository;
 import com.musify.backend.service.IAlbumService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class AlbumServiceImpl implements IAlbumService {
 
     private final AlbumRepository albumRepository;
+    private final AlbumArtistRepository albumArtistRepository;
 
     @Override
     public List<AlbumDto> getAlbumsForHome() {
@@ -28,6 +31,18 @@ public class AlbumServiceImpl implements IAlbumService {
     public List<AlbumDto> getAlbumsForSearch(String query) {
         return albumRepository.findTopByTitleContainingIgnoreCaseOrderByPopularityDesc(query, PageRequest.of(0, 10)).stream()
                 .map(this::transformToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AlbumDto> getAlbumsByArtistId(Long artistId) {
+        return albumArtistRepository.findAlbumsByArtistId(artistId).stream()
+                .map(this::transformToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<AlbumDto> getAlbumById(Long albumId) {
+        return albumRepository.findById(albumId)
+                .map(this::transformToDto);
     }
 
     AlbumDto transformToDto(Album album) {

@@ -65,6 +65,10 @@ const Login = () => {
         if (userData && (userData.userName || userData.email)) {
           console.log('Storing user data:', userData)
           localStorage.setItem('user', JSON.stringify(userData))
+          const resolvedUserId = userData.userId ?? userData.id
+          if (resolvedUserId != null) {
+            localStorage.setItem('userId', resolvedUserId)
+          }
           login(userData)
         } else {
           console.warn('No valid user data found in response:', response.data)

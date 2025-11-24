@@ -14,7 +14,11 @@ public class PublicPathConfig {
                 "/",
                 "/search/**",
                 "/auth/**",
-                "/static/**"
+                "/static/**",
+                "/artists/**",
+                "/albums/**",
+                "/playlists/**",
+                "/users/**"
         );
     }
 }

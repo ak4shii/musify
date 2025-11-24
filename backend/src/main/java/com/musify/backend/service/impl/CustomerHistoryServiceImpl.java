@@ -1,0 +1,57 @@
+package com.musify.backend.service.impl;
+
+import com.musify.backend.dto.TrackDto;
+import com.musify.backend.entity.CustomerHistory;
+import com.musify.backend.entity.Track;
+import com.musify.backend.repository.CustomerHistoryRepository;
+import com.musify.backend.repository.TrackRepository;
+import com.musify.backend.repository.UserRepository;
+import com.musify.backend.service.ICustomerHistoryService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class CustomerHistoryServiceImpl implements ICustomerHistoryService {
+
+    private final CustomerHistoryRepository customerHistoryRepository;
+    private final TrackRepository trackRepository;
+    private final UserRepository userRepository;
+
+    @Override
+    public void saveListeningHistory(Long userId, Long trackId) {
+        Track track = trackRepository.findById(trackId)
+                .orElseThrow(() -> new RuntimeException("Track not found"));
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        CustomerHistory history = new CustomerHistory();
+        history.setTrack(track);
+        history.setUser(user);
+        history.setPlayedAt(Instant.now());
+
+        customerHistoryRepository.save(history);
+    }
+
+    @Override
+    public List<TrackDto> getListeningHistory(Long userId) {
+        return customerHistoryRepository.findAllByUserUserIdOrderByPlayedAtDesc(userId).stream()
+                .map(CustomerHistory::getTrack)
+                .map(this::transformToDto)
+                .collect(Collectors.toList());
+    }
+
+    private TrackDto transformToDto(Track track) {
+        TrackDto trackDto = new TrackDto();
+        BeanUtils.copyProperties(track, trackDto);
+        if (track.getAlbum() != null) {
+            trackDto.setAlbumId(track.getAlbum().getAlbumId());
+        }
+        return trackDto;
+    }
+}

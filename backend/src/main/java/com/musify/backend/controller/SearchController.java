@@ -26,8 +26,8 @@ public class SearchController {
         List<AlbumDto> albums = iAlbumService.getAlbumsForSearch(query);
         List<ArtistDto> artists = iArtistService.getArtistsForSearch(query);
 
-        return ResponseEntity.status(HttpStatus.OK).
-                body(new SearchResponseDto(tracks, albums, artists));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SearchResponseDto(tracks, albums, artists));
     }
 }
 

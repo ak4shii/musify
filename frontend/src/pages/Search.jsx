@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import apiClient, { getImageUrl } from '../helpers/apiClient'
 import { useAuth } from '../contexts/AuthContext'
@@ -10,11 +10,11 @@ import TrackSearchProfile from '../components/searchProfiles/TrackSearchProfile'
 import ArtistProfile from '../components/profiles/ArtistProfile';
 import AlbumProfile from '../components/profiles/AlbumProfile';
 import PlaylistSearchProfile from '../components/searchProfiles/PlaylistSearchProfile';
-import ScrollableRow from '../components/profiles/ScrollableRow';
+import ScrollableRow from '../components/ScrollableRow';
  
 
 const Search = () => {
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   const [searchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState({
@@ -26,19 +26,7 @@ const Search = () => {
   const [loading, setLoading] = useState(false)
  
 
-  useEffect(() => {
-    const query = searchParams.get('q')
-    if (query && query.trim()) {
-      setSearchQuery(query.trim())
-      performSearch(query.trim())
-    } else {
-      setSearchQuery('')
-      setSearchResults({ tracks: [], artists: [], albums: [], playlists: [] })
-      setLoading(false)
-    }
-  }, [searchParams])
-
-  const performSearch = async (query) => {
+  const performSearch = useCallback(async (query) => {
     setLoading(true)
     try {
       const { data } = await apiClient.post('/search', null, { 
@@ -105,7 +93,19 @@ const Search = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    const query = searchParams.get('q')
+    if (query && query.trim()) {
+      setSearchQuery(query.trim())
+      performSearch(query.trim())
+    } else {
+      setSearchQuery('')
+      setSearchResults({ tracks: [], artists: [], albums: [], playlists: [] })
+      setLoading(false)
+    }
+  }, [performSearch, searchParams])
 
   const SearchSection = ({ title, items, type }) => {
     if (items.length === 0) return null

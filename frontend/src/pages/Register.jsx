@@ -95,11 +95,9 @@ const Register = () => {
       
       if (err.response?.status === 400) {
         const errorData = err.response.data
-        if (errorData.errors && Array.isArray(errorData.errors)) {
-          const errorMessages = errorData.errors.map(e => e.defaultMessage || e.message).join(', ')
-          setError(errorMessages)
-        } else if (errorData.message) {
-          setError(errorData.message)
+        if (errorData && typeof errorData === 'object') {
+          const message = Object.values(errorData)[0]
+          setError(message)
         } else {
           setError('Invalid registration data. Please check your input.')
         }

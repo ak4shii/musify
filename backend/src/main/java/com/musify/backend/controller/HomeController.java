@@ -31,7 +31,7 @@ public class HomeController {
         List<AlbumDto> albums = iAlbumService.getAlbumsForHome();
         List<ArtistDto> artists = iArtistService.getArtistsForHome();
 
-        return ResponseEntity.status(HttpStatus.OK).
-                body(new HomeResponseDto(tracks, albums, artists));
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new HomeResponseDto(tracks, albums, artists));
     }
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import ScrollableRow from './profiles/ScrollableRow'
+import ScrollableRow from './ScrollableRow'
 import TrackProfile from './profiles/TrackProfile'
 import ArtistProfile from './profiles/ArtistProfile'
 import AlbumProfile from './profiles/AlbumProfile'

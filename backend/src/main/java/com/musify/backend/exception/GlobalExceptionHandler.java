@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
         List<FieldError> fieldErrorList = exception.getBindingResult().getFieldErrors();
         fieldErrorList.forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-        return ResponseEntity.badRequest().body(errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -48,6 +48,18 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
         Set<ConstraintViolation<?>> constraintViolationSet = exception.getConstraintViolations();
         constraintViolationSet.forEach(constraintViolation -> errors.put(constraintViolation.getPropertyPath().toString(), constraintViolation.getMessage()));
-        return ResponseEntity.badRequest().body(errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleResourceNotFound(ResourceNotFoundException exception, WebRequest request) {
+        log.error("ERROR: {}", exception.getMessage());
+        ErrorResponseDto error = new ErrorResponseDto(
+                request.getDescription(false),
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 }

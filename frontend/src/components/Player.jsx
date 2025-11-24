@@ -6,7 +6,7 @@ import { getImageUrl } from '../helpers/apiClient'
 
 const Player = () => {
   const { isAuthenticated } = useAuth()
-  const { currentTrack, isPlaying, togglePlayPause, currentTime, duration, seekTo, volume, changeVolume, audioSrc } = usePlayer();
+  const { currentTrack, isPlaying, togglePlayPause, currentTime, duration, seekTo, volume, changeVolume, audioSrc, toggleShuffle, isShuffle, toggleRepeat, repeatMode, playPrevious, playNext, toggleMute } = usePlayer();
   const fmt = (s) => {
     if (!s || Number.isNaN(s)) return '-:--';
     const m = Math.floor(s / 60);
@@ -25,7 +25,7 @@ const Player = () => {
             <span className='text-xs text-[#b3b3b3]'>🎵</span>
           </div>
           <div>
-            <p className='text-sm font-semibold text-[#b3b3b3]'>Please log in to play music</p>
+            <p className='text-sm font-semibold text-[#b3b3b3]'></p>
             <p className='text-xs text-[#b3b3b3]'></p>
           </div>
         </div>
@@ -87,20 +87,20 @@ const Player = () => {
       </div>
       <div className='flex flex-col items-center gap-2 w-[40%]'>
         <div className='flex items-center gap-5'>
-          <button className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
-            <img className='w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75' src={assets.shuffle_icon} alt='Shuffle' />
+          <button onClick={toggleShuffle} className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
+            <img className={`w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75 ${isShuffle ? '' : ''}`} src={assets.shuffle_icon} alt='Shuffle' />
           </button>
-          <button className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
+          <button onClick={playPrevious} className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
             <img className='w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75' src={assets.prev_icon} alt='Prev' />
           </button>
           <button disabled={!currentTrack || !audioSrc} onClick={togglePlayPause} className={`w-8 h-8 rounded-full flex items-center justify-center hover:shadow-md transition ${currentTrack && audioSrc ? 'bg-white hover:bg-gray-200' : 'bg-white/40 cursor-not-allowed'}`}>
             <img className="w-4 h-4 invert" src={isPlaying ? assets.pause_icon : assets.play_icon} alt={isPlaying ? 'Pause' : 'Play'} />
           </button>
-          <button className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
+          <button onClick={playNext} className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
             <img className='w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75' src={assets.next_icon} alt='Next' />
           </button>
-          <button className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
-            <img className='w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75' src={assets.loop_icon} alt='Loop' />
+          <button onClick={toggleRepeat} className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
+            <img className='w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75' src={assets.loop_icon} alt='Loop' title={repeatMode === 'one' ? 'Repeat one' : 'Repeat off'} />
           </button>
         </div>
         <div className="flex items-center gap-3 w-full">
@@ -121,7 +121,7 @@ const Player = () => {
           <img className='w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75' src={assets.queue_icon} alt='Queue' />
         </button>
         <div className='flex items-center gap-2 w-28'>
-          <button className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
+          <button onClick={toggleMute} className='w-4 h-4 flex items-center justify-center hover:shadow-md transition cursor-pointer group'>
             <img className='w-4 h-4 transition group-hover:opacity-60 group-hover:brightness-75' src={assets.volume_icon} alt='Volume' />
           </button>
           <input type='range' min={0} max={1} step={0.01} value={volume} onChange={(e) => changeVolume(parseFloat(e.target.value))} className='w-full accent-white' />

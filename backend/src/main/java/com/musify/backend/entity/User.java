@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "\"user\"")
 public class User extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id", nullable = false)
@@ -46,6 +47,6 @@ public class User extends BaseEntity {
     private LocalDate dateOfBirth;
 
     @ColumnDefault("true")
-    @Column(name = "enabled")
+    @Column(name = "enabled", nullable = false)
     private Boolean enabled;
 }

@@ -70,11 +70,17 @@ const Login = () => {
             localStorage.setItem('userId', resolvedUserId)
           }
           login(userData)
+          
+          const userRole = userData.role
+          if (userRole === 'ROLE_ADMIN') {
+            navigate('/admin-panel')
+          } else {
+            navigate('/')
+          }
         } else {
           console.warn('No valid user data found in response:', response.data)
+          navigate('/')
         }
-        
-        navigate('/')
       }
     } catch (err) {
       console.error('Login error:', err)

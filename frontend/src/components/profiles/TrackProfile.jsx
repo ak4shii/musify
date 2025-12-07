@@ -5,6 +5,7 @@ import { usePlayer } from '../../contexts/PlayerContext'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { useUserRelations } from '../../contexts/UserRelationsContext'
+import TrackMenu from '../track/TrackMenu'
 
 const TrackProfile = ({ track, index }) => {
   const { playTrack } = usePlayer();
@@ -50,27 +51,8 @@ const TrackProfile = ({ track, index }) => {
   }
   
   return (
-    <div className='bg-[#181818] rounded p-4 min-w-[180px] snap-start group/track hover:bg-[#242424] transition-colors duration-200'>
+    <div className='bg-[#181818] rounded p-4 min-w-[180px] snap-start group/track hover:bg-[#242424] transition-colors duration-200 relative'>
       <div className='w-full aspect-square rounded bg-[#2a2a2a] mb-3 flex items-center justify-center relative overflow-hidden'>
-        <button
-          onClick={handleLikeToggle}
-          disabled={pendingLike}
-          aria-label={liked ? 'Unlike track' : 'Like track'}
-          className={`absolute top-2 right-2 z-10 bg-black/60 rounded-full p-1.5 hover:bg-black/80 transition-colors disabled:opacity-50 ${
-            liked ? 'opacity-100' : 'opacity-0 group-hover/track:opacity-100'
-          }`}
-        >
-          <svg
-            viewBox='0 0 24 24'
-            width='18'
-            height='18'
-            fill={liked ? '#1DB954' : 'none'}
-            stroke={liked ? '#1DB954' : '#ffffff'}
-            strokeWidth='1.5'
-          >
-            <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
-          </svg>
-        </button>
         {imageUrl ? (
           <img 
             src={imageUrl} 
@@ -104,6 +86,9 @@ const TrackProfile = ({ track, index }) => {
             />
           </button>
         </div>
+      </div>
+      <div className='absolute top-5 right-4 z-10 opacity-0 group-hover/track:opacity-100 transition-opacity'>
+        <TrackMenu track={track} onLike={handleLikeToggle} liked={liked} />
       </div>
       <p className='font-semibold text-sm mb-1'>{track?.title || `Song ${index + 1}`}</p>
       <p className='text-xs text-[#b3b3b3]'>

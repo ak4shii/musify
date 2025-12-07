@@ -37,6 +37,13 @@ const Artist = () => {
   useEffect(() => {
     if (!artistId) return;
 
+    const numericId = Number(artistId);
+    if (isNaN(numericId) || numericId <= 0) {
+      setError('Invalid artist ID');
+      setLoading(false);
+      return;
+    }
+
     const fetchArtist = async () => {
       setLoading(true);
       setError(null);

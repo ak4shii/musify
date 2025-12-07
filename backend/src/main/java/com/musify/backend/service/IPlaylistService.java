@@ -1,6 +1,7 @@
 package com.musify.backend.service;
 
 import com.musify.backend.dto.PlaylistDto;
+import com.musify.backend.dto.PlaylistUpdateRequestDto;
 import com.musify.backend.dto.TrackDto;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public interface IPlaylistService {
 
     List<PlaylistDto> getPlaylistsByUser(Long userId);
 
-    PlaylistDto updatePlaylistName(Long playlistId, String playlistNewName);
+    PlaylistDto updatePlaylist(Long playlistId, PlaylistUpdateRequestDto request);
 
     void deletePlaylist(Long playlistId);
 

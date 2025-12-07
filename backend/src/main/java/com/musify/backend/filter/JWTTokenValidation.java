@@ -32,7 +32,7 @@ public class JWTTokenValidation extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader(ApplicationConstants.JWT_HEADER);
-        if (null !=  authHeader) {
+        if (null != authHeader && authHeader.startsWith("Bearer ")) {
             try {
                 String jwt = authHeader.substring(7);
                 Environment env = getEnvironment();
@@ -43,15 +43,20 @@ public class JWTTokenValidation extends OncePerRequestFilter {
                     if (null != secretKey) {
                         Claims claims = Jwts.parser().verifyWith(secretKey)
                                 .build().parseSignedClaims(jwt).getPayload();
-                        String email = String.valueOf(claims.get("email"));
-                        String role = String.valueOf(claims.get("role"));
-                        Authentication authentication = new UsernamePasswordAuthenticationToken(email,
-                                null, AuthorityUtils.commaSeparatedStringToAuthorityList(role));
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        Object emailObj = claims.get("email");
+                        Object roleObj = claims.get("role");
+                        if (emailObj != null && roleObj != null) {
+                            String email = emailObj.toString().trim();
+                            String role = roleObj.toString().trim();
+                            if (!email.isEmpty() && !email.equals("null") && !role.isEmpty() && !role.equals("null")) {
+                                Authentication authentication = new UsernamePasswordAuthenticationToken(email,
+                                        null, AuthorityUtils.commaSeparatedStringToAuthorityList(role));
+                                SecurityContextHolder.getContext().setAuthentication(authentication);
+                            }
+                        }
                     }
                 }
             } catch (Exception exception) {
-                throw new BadCredentialsException("Invalid JWT token");
             }
         }
         filterChain.doFilter(request, response);
@@ -59,7 +64,6 @@ public class JWTTokenValidation extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
-        return publicPaths.stream().anyMatch(p -> antPathMatcher.match(p, path));
+        return false;
     }
 }

@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useMemo, useRef, useState, useCallback, useEffect } from "react";
 import apiClient, { resolveMediaUrl } from "../helpers/apiClient";
 

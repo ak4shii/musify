@@ -18,7 +18,8 @@ public class PublicPathConfig {
                 "/artists/**",
                 "/albums/**",
                 "/playlists/**",
-                "/users/**"
+                "/users/**",
+                "/admins/**"
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.musify.backend.service.impl;
 
 import com.musify.backend.dto.PlaylistDto;
+import com.musify.backend.dto.PlaylistUpdateRequestDto;
 import com.musify.backend.dto.TrackDto;
 import com.musify.backend.entity.*;
 import com.musify.backend.exception.ResourceNotFoundException;
@@ -44,6 +45,7 @@ public class PlaylistServiceImpl implements IPlaylistService {
         playlist.setPlaylistName(playlistName);
         playlist.setIsPublic(isPublic != null);
         playlist.setCoverUrl(coverUrl);
+        playlist.setCreatedBy(authenticatedUser.getEmail());
         playlistRepository.save(playlist);
     }
 
@@ -62,11 +64,20 @@ public class PlaylistServiceImpl implements IPlaylistService {
     }
 
     @Override
-    public PlaylistDto updatePlaylistName(Long playlistId, String playlistNewName) {
+    public PlaylistDto updatePlaylist(Long playlistId, PlaylistUpdateRequestDto request) {
         Playlist playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new ResourceNotFoundException("Playlist not found"));
 
-        playlist.setPlaylistName(playlistNewName);
+        if (request.getPlaylistName() != null) {
+            playlist.setPlaylistName(request.getPlaylistName());
+        }
+        if (request.getIsPublic() != null) {
+            playlist.setIsPublic(request.getIsPublic());
+        }
+        if (request.getCoverUrl() != null) {
+            playlist.setCoverUrl(request.getCoverUrl());
+        }
+
         return transformToDtoForPlaylist(playlistRepository.save(playlist));
     }
 
@@ -160,6 +171,7 @@ public class PlaylistServiceImpl implements IPlaylistService {
     private User getAuthenticatedCustomer() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
+
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
     }

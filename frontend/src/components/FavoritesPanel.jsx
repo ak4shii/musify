@@ -41,7 +41,7 @@ const FavoritesPanel = () => {
       tabIndex={0}
     >
       <div className='flex items-center gap-2'>
-        <div className='w-10 h-10 bg-gradient-to-b from-[#8B5CF6] to-[#06B6D4] rounded flex items-center justify-center flex-shrink-0'>
+        <div className='w-10 h-10 bg-linear-to-b from-[#8B5CF6] to-[#06B6D4] rounded flex items-center justify-center shrink-0'>
           <svg 
             className='w-3 h-3' 
             fill='white' 

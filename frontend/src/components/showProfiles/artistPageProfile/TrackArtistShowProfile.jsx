@@ -4,8 +4,10 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { assets } from '../../../assets/assets'
 import toast from 'react-hot-toast'
 import { useUserRelations } from '../../../contexts/UserRelationsContext'
+import TrackMenu from '../../track/TrackMenu'
+import { getImageUrl } from '../../../helpers/apiClient'
 
-const TrackArtistShowProfile = ({ track }) => {
+const TrackArtistShowProfile = ({ track, additionalActions }) => {
   const { playTrack } = usePlayer()
   const { isAuthenticated } = useAuth()
   const { isTrackLiked, likeTrack, unlikeTrack } = useUserRelations()
@@ -73,21 +75,25 @@ const TrackArtistShowProfile = ({ track }) => {
       onClick={handleClick}
     >
       <div className="relative w-14 h-14 rounded overflow-hidden bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-        {track.image ? (
-          <img 
-            src={track.image} 
-            alt={track.title || 'Track cover'} 
-            className="w-full h-full object-cover rounded" 
-            crossOrigin="anonymous"
-            onError={(e) => {
-              e.target.style.display = 'none'
-              const fallback = e.target.nextSibling
-              if (fallback) {
-                fallback.style.display = 'flex'
-              }
-            }}
-          />
-        ) : null}
+        {(() => {
+          const imagePath = track?.coverUrl || track?.cover_url || track?.imagePath || track?.image_path || track?.image;
+          const imageUrl = imagePath ? (imagePath.startsWith('http') ? imagePath : getImageUrl(imagePath)) : null;
+          return imageUrl ? (
+            <img 
+              src={imageUrl} 
+              alt={track.title || 'Track cover'} 
+              className="w-full h-full object-cover rounded" 
+              crossOrigin="anonymous"
+              onError={(e) => {
+                e.target.style.display = 'none'
+                const fallback = e.target.nextSibling
+                if (fallback) {
+                  fallback.style.display = 'flex'
+                }
+              }}
+            />
+          ) : null;
+        })()}
         <div className="hidden w-full h-full items-center justify-center text-gray-400 text-sm">
           🎵
         </div>
@@ -115,26 +121,9 @@ const TrackArtistShowProfile = ({ track }) => {
             : track.artist || track.album || 'Unknown'}
         </p>
       </div>
-      <div className='flex items-center gap-3'>
-        <button
-          onClick={handleLikeToggle}
-          disabled={pendingLike}
-          aria-label={liked ? 'Unlike track' : 'Like track'}
-          className={`p-1 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50 ${
-            liked ? 'opacity-100' : 'opacity-0 group-hover/track:opacity-100'
-          }`}
-        >
-          <svg
-            viewBox='0 0 24 24'
-            width='18'
-            height='18'
-            fill={liked ? '#1DB954' : 'none'}
-            stroke={liked ? '#1DB954' : '#ffffff'}
-            strokeWidth='1.5'
-          >
-            <path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' />
-          </svg>
-        </button>
+      <div className='flex items-center gap-2'>
+        <TrackMenu track={track} onLike={handleLikeToggle} liked={liked} />
+        {additionalActions}
         <span className="text-xs text-gray-400 flex-shrink-0">{formatDuration(track.duration)}</span>
       </div>
     </div>

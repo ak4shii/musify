@@ -31,6 +31,11 @@ public class EmailAndPasswordAuthentication implements AuthenticationProvider {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found with email: " + email + ". Please register.")
                 );
+        
+        if (user.getEnabled() == null || !user.getEnabled()) {
+            throw new BadCredentialsException("Account is disabled. Please contact administrator.");
+        }
+        
         String role = user.getRole();
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
         if (passwordEncoder.matches(password, user.getPasswordHash())) {

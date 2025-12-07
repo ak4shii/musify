@@ -6,9 +6,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import java.time.Duration;
 
 @Getter
 @Setter
@@ -46,5 +46,6 @@ public class Track extends BaseEntity {
     private Integer popularity;
 
     @Column(name = "duration", columnDefinition = "interval")
+    @ColumnTransformer(write = "CAST(? AS interval)", read = "duration::text")
     private String duration;
 }

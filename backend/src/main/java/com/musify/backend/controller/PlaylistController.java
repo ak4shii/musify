@@ -3,9 +3,11 @@ package com.musify.backend.controller;
 import com.musify.backend.dto.PlaylistCreateRequestDto;
 import com.musify.backend.dto.PlaylistDetailResponseDto;
 import com.musify.backend.dto.PlaylistDto;
+import com.musify.backend.dto.PlaylistUpdateRequestDto;
 import com.musify.backend.dto.TrackDto;
 import com.musify.backend.exception.ResourceNotFoundException;
 import com.musify.backend.service.IPlaylistService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,9 +75,12 @@ public class PlaylistController {
     }
 
     @PutMapping("/users/{userId}/update-playlists/{playlistId}")
-    public ResponseEntity<PlaylistDto> updatePlaylistName(@PathVariable Long userId, @PathVariable Long playlistId, @RequestBody PlaylistCreateRequestDto request) {
+    public ResponseEntity<PlaylistDto> updatePlaylist(
+            @PathVariable Long userId,
+            @PathVariable Long playlistId,
+            @Valid @RequestBody PlaylistUpdateRequestDto request) {
         iPlaylistService.checkPlaylistOwner(userId, playlistId);
-        PlaylistDto playlist = iPlaylistService.updatePlaylistName(playlistId, request.getPlaylistName());
+        PlaylistDto playlist = iPlaylistService.updatePlaylist(playlistId, request);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(playlist);
     }

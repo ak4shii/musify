@@ -6,11 +6,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-
 import java.util.List;
+import java.util.Optional;
 
 public interface AlbumArtistRepository extends JpaRepository<AlbumArtist,Long> {
 
     @Query("SELECT aa.album FROM AlbumArtist aa WHERE aa.artist.artistId = :artistId")
     List<Album> findAlbumsByArtistId(@Param("artistId") Long artistId);
+
+    @Query("SELECT aa FROM AlbumArtist aa WHERE aa.album.albumId = :albumId AND aa.artist.artistId = :artistId")
+    Optional<AlbumArtist> findByAlbumIdAndArtistId(@Param("albumId") Integer albumId, @Param("artistId") Integer artistId);
 }

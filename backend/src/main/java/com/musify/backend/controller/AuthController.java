@@ -92,7 +92,7 @@ public class AuthController {
         User user = new User();
         BeanUtils.copyProperties(registerRequestDto, user);
         user.setPasswordHash(passwordEncoder.encode(registerRequestDto.getPassword()));
-        user.setRole("ROLE_USER");
+        user.setRole("ROLE_CUSTOMER");
         user.setCreatedBy(registerRequestDto.getEmail());
         user.setEnabled(true);
         userRepository.save(user);

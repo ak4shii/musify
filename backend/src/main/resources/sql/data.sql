@@ -1,4 +1,4 @@
-INSERT INTO Artist (name, profile_url, biography, popularity, created_by)
+INSERT INTO Artist (name, profile_url, biography, followers, created_by)
 VALUES
     ('Kikiyama', 'static/kikiyama/profile_photo/kikiyama.jpg',
      'Japanese indie composer best known for the surreal soundtrack of Yume Nikki.', 15, 'admin'),
@@ -14,7 +14,7 @@ VALUES
 INSERT INTO Album (title, cover_url, release_date, popularity, created_by)
 VALUES
     ('Yume Nikki OST', 'static/kikiyama/album/yume-nikki-ost/album-cover/yume-nikki-ost.jpg', '2004-03-10', 14, 'admin'),
-    ('Hibi no Awa', 'static/uchu-nekoko/album/hibi-no-awa/album-cover/hibi-no-awa.jpg', '2019-05-01', 15 'admin'),
+    ('Hibi no Awa', 'static/uchu-nekoko/album/hibi-no-awa/album-cover/hibi-no-awa.jpg', '2019-05-01', 15, 'admin'),
     ('No New World', 'static/mass-of-the-fermenting-dregs/album/no-new-world/album-cover/no-new-world.jpg', '2018-06-15', 16, 'admin'),
     ('You / Uta wo Utaeba', 'static/mass-of-the-fermenting-dregs/album/uta-wo-utaeba/album-cover/uta-wo-utaeba.jpg', '2019-09-12', 17, 'admin'),
     ('クロなら結構です', 'static/mowmow-lulu-gyaban/album/クロなら結構です/album-cover/クロなら結構です.jpg', '2013-04-21', 18, 'admin');

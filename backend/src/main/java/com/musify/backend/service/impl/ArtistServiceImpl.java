@@ -3,12 +3,18 @@ package com.musify.backend.service.impl;
 import com.musify.backend.dto.ArtistCreateRequestDto;
 import com.musify.backend.dto.ArtistDto;
 import com.musify.backend.dto.ArtistUpdateRequestDto;
+import com.musify.backend.entity.Album;
 import com.musify.backend.entity.Artist;
+import com.musify.backend.entity.Track;
 import com.musify.backend.entity.User;
 import com.musify.backend.exception.ResourceNotFoundException;
+import com.musify.backend.repository.AlbumArtistRepository;
+import com.musify.backend.repository.AlbumRepository;
 import com.musify.backend.repository.ArtistRepository;
+import com.musify.backend.repository.TrackArtistRepository;
+import com.musify.backend.repository.TrackRepository;
 import com.musify.backend.repository.UserRepository;
-import com.musify.backend.service.FileStorageService;
+import com.musify.backend.storage.FileStorageService;
 import com.musify.backend.service.IArtistService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,16 +36,20 @@ public class ArtistServiceImpl implements IArtistService {
     private final ArtistRepository artistRepository;
     private final FileStorageService fileStorageService;
     private final UserRepository userRepository;
+    private final TrackArtistRepository trackArtistRepository;
+    private final AlbumArtistRepository albumArtistRepository;
+    private final TrackRepository trackRepository;
+    private final AlbumRepository albumRepository;
 
     @Override
     public List<ArtistDto> getArtistsForHome() {
-        return artistRepository.findTop10ByOrderByPopularityDesc().stream()
+        return artistRepository.findTop10ByOrderByFollowersDesc().stream()
                 .map(this::transformToDto).collect(Collectors.toList());
     }
 
     @Override
     public List<ArtistDto> getArtistsForSearch(String query) {
-        return artistRepository.findTopByTitleContainingIgnoreCaseOrderByPopularityDesc(query, PageRequest.of(0, 10)).stream()
+        return artistRepository.findTopByTitleContainingIgnoreCaseOrderByFollowersDesc(query, PageRequest.of(0, 10)).stream()
                 .map(this::transformToDto).collect(Collectors.toList());
     }
 
@@ -96,10 +106,47 @@ public class ArtistServiceImpl implements IArtistService {
     @Override
     @Transactional
     public void deleteArtist(Integer artistId) {
-        if (!artistRepository.existsById(artistId.longValue())) {
-            throw new ResourceNotFoundException("Artist not found with id " + artistId);
+        Artist artist = artistRepository.findById(artistId.longValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id " + artistId));
+        
+        String artistName = artist.getArtistName();
+        
+        List<Album> artistAlbums = albumArtistRepository.findAlbumsByArtistId(artistId.longValue());
+        List<Track> artistTracks = trackArtistRepository.findTracksByArtistId(artistId.longValue());
+        
+        for (Album album : artistAlbums) {
+            long artistCount = albumArtistRepository.findAll().stream()
+                    .filter(aa -> aa.getAlbum().getAlbumId().equals(album.getAlbumId()))
+                    .count();
+            
+            if (artistCount == 1) {
+                List<Track> albumTracks = trackRepository.findTracksByAlbumId(album.getAlbumId().longValue());
+                trackRepository.deleteAll(albumTracks);
+                albumRepository.delete(album);
+            }
         }
-        artistRepository.deleteById(artistId.longValue());
+        
+        for (Track track : artistTracks) {
+            if (!trackRepository.existsById(track.getTrackId().longValue())) {
+                continue;
+            }
+            
+            long artistCount = trackArtistRepository.findAll().stream()
+                    .filter(ta -> ta.getTrack().getTrackId().equals(track.getTrackId()))
+                    .count();
+            
+            if (artistCount == 1) {
+                trackRepository.delete(track);
+            }
+        }
+        
+        try {
+            fileStorageService.deleteArtistFolder(artistName);
+        } catch (Exception e) {
+            System.err.println("Failed to delete artist folder for " + artistName + ": " + e.getMessage());
+        }
+        
+        artistRepository.delete(artist);
     }
 
     @Override
@@ -112,6 +159,9 @@ public class ArtistServiceImpl implements IArtistService {
     ArtistDto transformToDto(Artist artist) {
         ArtistDto artistDto = new ArtistDto();
         BeanUtils.copyProperties(artist, artistDto);
+        // Calculate actual follower count from UserArtistFollow table
+        Long followerCount = artistRepository.countFollowersByArtistId(artist.getArtistId().longValue());
+        artistDto.setFollowers(followerCount != null ? followerCount.intValue() : 0);
         return artistDto;
     }
 

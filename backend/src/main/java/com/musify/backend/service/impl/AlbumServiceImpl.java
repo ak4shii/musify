@@ -7,13 +7,15 @@ import com.musify.backend.entity.Album;
 import com.musify.backend.entity.AlbumArtist;
 import com.musify.backend.entity.AlbumArtistId;
 import com.musify.backend.entity.Artist;
+import com.musify.backend.entity.Track;
 import com.musify.backend.entity.User;
 import com.musify.backend.exception.ResourceNotFoundException;
 import com.musify.backend.repository.AlbumArtistRepository;
 import com.musify.backend.repository.AlbumRepository;
 import com.musify.backend.repository.ArtistRepository;
+import com.musify.backend.repository.TrackRepository;
 import com.musify.backend.repository.UserRepository;
-import com.musify.backend.service.FileStorageService;
+import com.musify.backend.storage.FileStorageService;
 import com.musify.backend.service.IAlbumService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,6 +39,7 @@ public class AlbumServiceImpl implements IAlbumService {
     private final ArtistRepository artistRepository;
     private final FileStorageService fileStorageService;
     private final UserRepository userRepository;
+    private final TrackRepository trackRepository;
 
     @Override
     public List<AlbumDto> getAlbumsForHome() {
@@ -139,10 +142,37 @@ public class AlbumServiceImpl implements IAlbumService {
     @Override
     @Transactional
     public void deleteAlbum(Integer albumId) {
-        if (!albumRepository.existsById(albumId.longValue())) {
-            throw new ResourceNotFoundException("Album not found with id " + albumId);
+        Album album = albumRepository.findById(albumId.longValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id " + albumId));
+        
+        String albumTitle = album.getTitle();
+        
+        List<Track> albumTracks = trackRepository.findTracksByAlbumId(albumId.longValue());
+        
+        for (Track track : albumTracks) {
+            try {
+                fileStorageService.deleteTrackFile(track.getFilePath());
+            } catch (Exception e) {
+                System.err.println("Failed to delete track file for " + track.getTitle() + ": " + e.getMessage());
+            }
+            trackRepository.delete(track);
         }
-        albumRepository.deleteById(albumId.longValue());
+        
+        List<AlbumArtist> albumArtists = albumArtistRepository.findAll().stream()
+                .filter(aa -> aa.getAlbum().getAlbumId().equals(albumId))
+                .collect(Collectors.toList());
+        
+        Artist firstArtist = albumArtists.isEmpty() ? null : albumArtists.get(0).getArtist();
+        
+        if (firstArtist != null) {
+            try {
+                fileStorageService.deleteAlbumFolder(firstArtist.getArtistName(), albumTitle);
+            } catch (Exception e) {
+                System.err.println("Failed to delete album folder for " + albumTitle + ": " + e.getMessage());
+            }
+        }
+        
+        albumRepository.delete(album);
     }
 
     @Override

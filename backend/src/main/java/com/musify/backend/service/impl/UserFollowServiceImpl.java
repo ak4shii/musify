@@ -13,6 +13,7 @@ import com.musify.backend.service.IUserFollowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ public class UserFollowServiceImpl implements IUserFollowService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public void followArtist(Long userId, Long artistId) {
         if (isFollowing(userId, artistId)) return;
 
@@ -44,12 +46,24 @@ public class UserFollowServiceImpl implements IUserFollowService {
         follow.setUser(user);
 
         userArtistFollowRepository.save(follow);
+        
+        Integer currentFollowers = artist.getFollowers() != null ? artist.getFollowers() : 0;
+        artist.setFollowers(currentFollowers + 1);
+        artistRepository.save(artist);
     }
 
     @Override
+    @Transactional
     public void unfollowArtist(Long userId, Long artistId) {
         userArtistFollowRepository.findByUserUserIdAndArtistArtistId(userId, artistId)
-                .ifPresent(userArtistFollowRepository::delete);
+                .ifPresent(follow -> {
+                    Artist artist = follow.getArtist();
+                    userArtistFollowRepository.delete(follow);
+                    
+                    Integer currentFollowers = artist.getFollowers() != null ? artist.getFollowers() : 0;
+                    artist.setFollowers(Math.max(0, currentFollowers - 1));
+                    artistRepository.save(artist);
+                });
     }
 
     @Override

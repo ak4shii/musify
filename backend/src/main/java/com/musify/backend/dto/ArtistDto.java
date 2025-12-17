@@ -11,5 +11,5 @@ public class ArtistDto {
     private String artistName;
     private String profileUrl;
     private String biography;
-    private Integer popularity;
+    private Integer followers;
 }

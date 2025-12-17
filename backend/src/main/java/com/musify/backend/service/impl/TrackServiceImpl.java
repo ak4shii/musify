@@ -16,6 +16,7 @@ import com.musify.backend.repository.TrackArtistRepository;
 import com.musify.backend.repository.TrackRepository;
 import com.musify.backend.repository.UserRepository;
 import com.musify.backend.service.ITrackService;
+import com.musify.backend.storage.FileStorageService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -38,6 +39,7 @@ public class TrackServiceImpl implements ITrackService {
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     public List<TrackDto> getTracksForHome() {
@@ -146,10 +148,16 @@ public class TrackServiceImpl implements ITrackService {
     @Override
     @Transactional
     public void deleteTrack(Integer trackId) {
-        if (!trackRepository.existsById(trackId.longValue())) {
-            throw new ResourceNotFoundException("Track not found with id " + trackId);
+        Track track = trackRepository.findById(trackId.longValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Track not found with id " + trackId));
+        
+        try {
+            fileStorageService.deleteTrackFile(track.getFilePath());
+        } catch (Exception e) {
+            System.err.println("Failed to delete track file for " + track.getTitle() + ": " + e.getMessage());
         }
-        trackRepository.deleteById(trackId.longValue());
+        
+        trackRepository.delete(track);
     }
 
     @Override

@@ -7,7 +7,7 @@ import com.musify.backend.exception.ResourceNotFoundException;
 import com.musify.backend.repository.AlbumArtistRepository;
 import com.musify.backend.repository.AlbumRepository;
 import com.musify.backend.repository.ArtistRepository;
-import com.musify.backend.service.FileStorageService;
+import com.musify.backend.storage.FileStorageService;
 import com.musify.backend.service.IAlbumService;
 import com.musify.backend.service.IArtistService;
 import com.musify.backend.service.ITrackService;
@@ -44,7 +44,7 @@ public class AdminController {
     @GetMapping("/artists/{artistId}")
     public ResponseEntity<ArtistDto> getArtistById(@PathVariable Integer artistId) {
         ArtistDto artist = artistService.getArtistById(artistId.longValue())
-                .orElseThrow(() -> new RuntimeException("Artist not found with id " + artistId));
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id " + artistId));
         return ResponseEntity.ok(artist);
     }
 
@@ -95,7 +95,7 @@ public class AdminController {
             
             if (profileImage != null && !profileImage.isEmpty()) {
                 ArtistDto existingArtist = artistService.getArtistById(artistId.longValue())
-                        .orElseThrow(() -> new RuntimeException("Artist not found with id " + artistId));
+                        .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id " + artistId));
                 
                 String profileUrl = fileStorageService.uploadArtistProfileImage(profileImage, existingArtist.getArtistName());
                 request.setProfileUrl(profileUrl);
@@ -127,7 +127,7 @@ public class AdminController {
     @GetMapping("/albums/{albumId}")
     public ResponseEntity<AlbumDto> getAlbumById(@PathVariable Integer albumId) {
         AlbumDto album = albumService.getAlbumById(albumId.longValue())
-                .orElseThrow(() -> new RuntimeException("Album not found with id " + albumId));
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id " + albumId));
         return ResponseEntity.ok(album);
     }
 
@@ -232,7 +232,7 @@ public class AdminController {
     @GetMapping("/tracks/{trackId}")
     public ResponseEntity<TrackDto> getTrackById(@PathVariable Integer trackId) {
         TrackDto track = trackService.getTrackById(trackId)
-                .orElseThrow(() -> new RuntimeException("Track not found with id " + trackId));
+                .orElseThrow(() -> new ResourceNotFoundException("Track not found with id " + trackId));
         return ResponseEntity.ok(track);
     }
 

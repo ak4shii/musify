@@ -1,4 +1,4 @@
-package com.musify.backend.service;
+package com.musify.backend.storage;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,13 +11,11 @@ import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
 import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
 import org.jaudiotagger.tag.TagException;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @Service
 public class FileStorageService {
@@ -198,6 +196,59 @@ public class FileStorageService {
             return duration;
         } catch (CannotReadException | TagException | ReadOnlyFileException | InvalidAudioFrameException e) {
             throw new IOException("Failed to read MP3 file metadata: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteArtistFolder(String artistName) throws IOException {
+        String artistFolderName = slugify(artistName);
+        Path staticPath = Paths.get("src/main/resources/static");
+        Path artistPath = staticPath.resolve(artistFolderName);
+        
+        if (Files.exists(artistPath)) {
+            deleteDirectoryRecursively(artistPath);
+        }
+    }
+
+    public void deleteAlbumFolder(String artistName, String albumName) throws IOException {
+        String artistFolderName = slugify(artistName);
+        String albumFolderName = slugify(albumName);
+        Path staticPath = Paths.get("src/main/resources/static");
+        Path albumPath = staticPath.resolve(artistFolderName).resolve("album").resolve(albumFolderName);
+        
+        if (Files.exists(albumPath)) {
+            deleteDirectoryRecursively(albumPath);
+        }
+    }
+
+    public void deleteTrackFile(String filePath) throws IOException {
+        if (filePath == null || filePath.isEmpty()) {
+            return;
+        }
+        
+        String cleanPath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+        if (!cleanPath.startsWith("static/")) {
+            cleanPath = "static/" + cleanPath;
+        }
+        
+        Path staticPath = Paths.get("src/main/resources");
+        Path trackFilePath = staticPath.resolve(cleanPath);
+        
+        if (Files.exists(trackFilePath)) {
+            Files.delete(trackFilePath);
+        }
+    }
+
+    private void deleteDirectoryRecursively(Path path) throws IOException {
+        if (Files.exists(path)) {
+            Files.walk(path)
+                    .sorted((a, b) -> b.compareTo(a))
+                    .forEach(p -> {
+                        try {
+                            Files.delete(p);
+                        } catch (IOException e) {
+                            System.err.println("Failed to delete: " + p + " - " + e.getMessage());
+                        }
+                    });
         }
     }
 

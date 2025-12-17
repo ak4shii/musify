@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UserRelationsProvider } from "./contexts/UserRelationsContext";
 import { PlaylistModalProvider } from "./contexts/PlaylistModalContext";
@@ -17,6 +17,7 @@ import Playlist from "./pages/Playlist";
 import PlaylistDetail from "./pages/PlaylistDetail";
 import AdminPanel from "./pages/AdminPanel";
 import CustomerRoute from "./components/CustomerRoute";
+import AdminRoute from "./components/AdminRoute";
 
 function App() {
   return (
@@ -24,19 +25,18 @@ function App() {
       <UserRelationsProvider>
         <PlaylistModalProvider>
           <Routes>
-          <Route path="/" element={<CustomerRoute><Home /></CustomerRoute>} />
-          <Route path="/search" element={<CustomerRoute><Search /></CustomerRoute>} />
-          <Route path="/support" element={<CustomerRoute><Support /></CustomerRoute>} />
+          <Route path="/" element={<Home />} />
+          <Route path="/search" element={<Search  />} />
+          <Route path="/support" element={<Support />} />
           <Route path="/liked" element={<CustomerRoute><LikedSongs /></CustomerRoute>} />
           <Route path="/followed-artists" element={<CustomerRoute><FollowedArtists /></CustomerRoute>} />
           <Route path="/playlists" element={<CustomerRoute><Playlist /></CustomerRoute>} />
           <Route path="/playlists/:playlistId" element={<CustomerRoute><PlaylistDetail /></CustomerRoute>} />
-          <Route path="/artists/followed-artists" element={<Navigate to="/followed-artists" replace />} />
-          <Route path="/artists/:artistId" element={<CustomerRoute><Artist /></CustomerRoute>} />
-          <Route path="/albums/:albumId" element={<CustomerRoute><Album /></CustomerRoute>} />
+          <Route path="/artists/:artistId" element={<Artist />} />
+          <Route path="/albums/:albumId" element={<Album />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin-panel" element={<AdminPanel />} />
+          <Route path="/admin-panel" element={<AdminRoute><AdminPanel /></AdminRoute>} />
           </Routes>
         </PlaylistModalProvider>
       </UserRelationsProvider>

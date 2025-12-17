@@ -30,6 +30,6 @@ public class Artist extends BaseEntity {
     private String biography;
 
     @ColumnDefault("0")
-    @Column(name = "popularity")
-    private Integer popularity;
+    @Column(name = "followers")
+    private Integer followers;
 }

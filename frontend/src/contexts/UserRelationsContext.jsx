@@ -39,6 +39,8 @@ const normalizeTrack = (track) => {
   if (!track || typeof track !== 'object') return null
   const trackId = track.trackId ?? track.id
   const artistName =
+    track.primaryArtistName ??
+    (track.artistNames && track.artistNames.length > 0 ? track.artistNames[0] : null) ??
     track.artist?.artistName ??
     track.artist?.name ??
     track.artist ??
@@ -76,6 +78,11 @@ const normalizeTrack = (track) => {
     trackId,
     title: track.title ?? track.name ?? track.trackTitle ?? 'Unknown Track',
     artist: artistName,
+    artistName: artistName,
+    primaryArtistName: track.primaryArtistName ?? artistName,
+    primaryArtistId: track.primaryArtistId ?? null,
+    artistNames: track.artistNames ?? (artistName ? [artistName] : []),
+    artists: track.artistNames ?? (artistName ? [artistName] : []),
     album: albumTitle,
     duration: track.duration ?? track.durationText ?? track.length ?? null,
     filePath: track.filePath ?? track.file_path ?? track.streamUrl ?? null,
@@ -123,7 +130,6 @@ export const UserRelationsProvider = ({ children }) => {
         if (parsed?.id != null) return parsed.id
       }
     } catch (error) {
-      console.error('Failed to parse stored user for relations:', error)
     }
     const fallbackId = localStorage.getItem('userId')
     return fallbackId != null ? Number(fallbackId) : null
@@ -153,7 +159,6 @@ export const UserRelationsProvider = ({ children }) => {
       setLikedTracks(normalized)
       return normalized
     } catch (error) {
-      console.error('Failed to fetch liked tracks:', error)
       return []
     }
   }, [buildAuthHeaders, derivedUserId, isAuthenticated])
@@ -177,7 +182,6 @@ export const UserRelationsProvider = ({ children }) => {
       setFollowedArtists(normalized)
       return normalized
     } catch (error) {
-      console.error('Failed to fetch followed artists:', error)
       return []
     }
   }, [buildAuthHeaders, derivedUserId, isAuthenticated])

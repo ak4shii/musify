@@ -27,13 +27,36 @@ const AlbumSearchProfile = ({ album }) => {
             💿
           </div>
         </div>
-        <div>
-          <h3 className="font-medium text-white">{album.title}</h3>
-          <p className="text-sm text-gray-400">
-            {album.artist && album.year 
-              ? `${album.artist} • ${album.year}`
-              : album.artist || album.year || 'Unknown'}
-          </p>
+        <div className="min-w-0">
+          <h3 className="font-medium text-white truncate">{album.title}</h3>
+          {(() => {
+            const artistLabel = album.primaryArtistName 
+              || (album.artistNames && album.artistNames.length > 0 ? album.artistNames[0] : null)
+              || album.artistName
+              || album.artist
+              || null;
+            const artistId = album?.primaryArtistId;
+            const displayText = artistLabel && album.year 
+              ? `${artistLabel} • ${album.year}`
+              : artistLabel || album.year || 'Unknown';
+            
+            if (artistId && artistLabel) {
+              return (
+                <Link 
+                  to={`/artists/${artistId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-sm text-gray-400 truncate hover:text-white hover:underline underline-offset-1 transition-colors inline-block max-w-full cursor-pointer"
+                >
+                  {displayText}
+                </Link>
+              );
+            }
+            return (
+              <p className="text-sm text-gray-400 truncate">
+                {displayText}
+              </p>
+            );
+          })()}
         </div>
       </div>
     )
@@ -61,13 +84,36 @@ const AlbumSearchProfile = ({ album }) => {
           💿
         </div>
       </div>
-      <div>
-        <h3 className="font-medium text-white">{album.title}</h3>
-        <p className="text-sm text-gray-400">
-          {album.artist && album.year 
-            ? `${album.artist} • ${album.year}`
-            : album.artist || album.year || 'Unknown'}
-        </p>
+      <div className="min-w-0">
+        <h3 className="font-medium text-white truncate">{album.title}</h3>
+        {(() => {
+          const artistLabel = album.primaryArtistName 
+            || (album.artistNames && album.artistNames.length > 0 ? album.artistNames[0] : null)
+            || album.artistName
+            || album.artist
+            || null;
+          const artistId = album?.primaryArtistId;
+          const displayText = artistLabel && album.year 
+            ? `${artistLabel} • ${album.year}`
+            : artistLabel || album.year || 'Unknown';
+          
+          if (artistId && artistLabel) {
+            return (
+              <Link 
+                to={`/artists/${artistId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm text-gray-400 truncate hover:text-white hover:underline underline-offset-1 transition-colors inline-block max-w-full"
+              >
+                {displayText}
+              </Link>
+            );
+          }
+          return (
+            <p className="text-sm text-gray-400 truncate">
+              {displayText}
+            </p>
+          );
+        })()}
       </div>
     </Link>
   )

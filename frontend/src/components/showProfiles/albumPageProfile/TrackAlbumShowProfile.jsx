@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { usePlayer } from '../../../contexts/PlayerContext'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useUserRelations } from '../../../contexts/UserRelationsContext'
-import toast from 'react-hot-toast'
+import toast from '../../../helpers/singleToast'
 import TrackMenu from '../../track/TrackMenu'
 
 const TrackAlbumShowProfile = ({ track, index, album }) => {
@@ -51,7 +52,6 @@ const TrackAlbumShowProfile = ({ track, index, album }) => {
         toast.success('Added to liked songs')
       }
     } catch (error) {
-      console.error('Failed to toggle track like:', error)
       toast.error('Could not update liked songs')
     } finally {
       setPendingLike(false)
@@ -63,13 +63,37 @@ const TrackAlbumShowProfile = ({ track, index, album }) => {
       onClick={handlePlayTrack}
       className='w-full flex items-center gap-4 px-4 py-3 hover:bg-white/10 transition text-left cursor-pointer group/track'
     >
-      <span className='w-6 text-sm text-gray-400'>{index + 1}</span>
-      <div className='flex-1'>
-        <p className='text-base font-medium'>
+      <span className='w-6 text-sm text-gray-400 flex-shrink-0'>{index + 1}</span>
+      <div className='flex-1 min-w-0'>
+        <p className='text-base font-medium truncate'>
           {track?.title || track?.name || `Track ${index + 1}`}
         </p>
-        <p className='text-xs text-gray-400'>
-          {track?.artist || track?.artistName || album?.artist || album?.artistName || ''}
+        <p className='text-xs text-gray-400 truncate'>
+          {(() => {
+            const artistLabel = track?.primaryArtistName 
+              || track?.artistName
+              || track?.artist
+              || (track?.artistNames && track.artistNames.length > 0 ? track.artistNames[0] : null)
+              || album?.primaryArtistName
+              || album?.artistName
+              || album?.artist
+              || (album?.artistNames && album.artistNames.length > 0 ? album.artistNames[0] : null)
+              || '';
+            const artistId = track?.primaryArtistId || album?.primaryArtistId;
+            
+            if (artistId && artistLabel) {
+              return (
+                <Link 
+                  to={`/artists/${artistId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:text-white hover:underline underline-offset-1 transition-colors cursor-pointer"
+                >
+                  {artistLabel}
+                </Link>
+              );
+            }
+            return <span>{artistLabel}</span>;
+          })()}
         </p>
       </div>
       <div className='flex items-center gap-8'>

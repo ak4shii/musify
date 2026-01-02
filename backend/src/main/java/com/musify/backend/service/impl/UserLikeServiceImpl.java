@@ -1,11 +1,13 @@
 package com.musify.backend.service.impl;
 
 import com.musify.backend.dto.TrackDto;
+import com.musify.backend.entity.Artist;
 import com.musify.backend.entity.Track;
 import com.musify.backend.entity.User;
 import com.musify.backend.entity.UserTrackLike;
 import com.musify.backend.entity.UserTrackLikeId;
 import com.musify.backend.exception.ResourceNotFoundException;
+import com.musify.backend.repository.TrackArtistRepository;
 import com.musify.backend.repository.TrackRepository;
 import com.musify.backend.repository.UserRepository;
 import com.musify.backend.repository.UserTrackLikeRepository;
@@ -24,6 +26,7 @@ public class UserLikeServiceImpl implements IUserLikeService {
     private final UserTrackLikeRepository userTrackLikeRepository;
     private final TrackRepository trackRepository;
     private final UserRepository userRepository;
+    private final TrackArtistRepository trackArtistRepository;
 
     @Override
     public void likeTrack(Long userId, Long trackId) {
@@ -74,6 +77,16 @@ public class UserLikeServiceImpl implements IUserLikeService {
         BeanUtils.copyProperties(track, trackDto);
         if (track.getAlbum() != null) {
             trackDto.setAlbumId(track.getAlbum().getAlbumId());
+        }
+        List<Artist> artists = trackArtistRepository.findArtistsByTrackId(track.getTrackId());
+        List<String> artistNames = artists.stream()
+                .map(Artist::getArtistName)
+                .collect(Collectors.toList());
+        trackDto.setArtistNames(artistNames);
+        if (!artists.isEmpty()) {
+            Artist primaryArtist = artists.get(0);
+            trackDto.setPrimaryArtistName(primaryArtist.getArtistName());
+            trackDto.setPrimaryArtistId(primaryArtist.getArtistId());
         }
         return trackDto;
     }

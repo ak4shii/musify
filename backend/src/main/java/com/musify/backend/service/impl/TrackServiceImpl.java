@@ -1,5 +1,6 @@
 package com.musify.backend.service.impl;
 
+import com.musify.backend.dto.TrackCreateMultipartDto;
 import com.musify.backend.dto.TrackCreateRequestDto;
 import com.musify.backend.dto.TrackDto;
 import com.musify.backend.dto.TrackUpdateRequestDto;
@@ -26,6 +27,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -173,11 +177,60 @@ public class TrackServiceImpl implements ITrackService {
                 .map(this::transformToDto);
     }
 
+    @Override
+    @Transactional
+    public TrackDto createTrackFromMultipart(TrackCreateMultipartDto multipartDto) throws IOException {
+        if (multipartDto.getArtistIds() == null || multipartDto.getArtistIds().isEmpty()) {
+            throw new IllegalArgumentException("At least one artist ID is required");
+        }
+
+        Album album = albumRepository.findById(multipartDto.getAlbumId().longValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Album not found with id " + multipartDto.getAlbumId()));
+
+        Artist firstArtist = artistRepository.findById(multipartDto.getArtistIds().getFirst().longValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id " + multipartDto.getArtistIds().getFirst()));
+
+        String filePath = fileStorageService.uploadMp3FileToAlbum(
+                multipartDto.getFile(), firstArtist.getArtistName(), album.getTitle());
+
+        String duration;
+        try {
+            Path staticPath = Paths.get("src/main/resources/static");
+            Path fullFilePath = staticPath.resolve(filePath.substring(1));
+            duration = fileStorageService.extractMp3Duration(fullFilePath);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to extract duration from MP3 file: " + e.getMessage());
+        }
+
+        String coverUrl = album.getCoverUrl();
+
+        TrackCreateRequestDto request = new TrackCreateRequestDto();
+        request.setAlbumId(multipartDto.getAlbumId());
+        request.setTitle(multipartDto.getTitle());
+        request.setFilePath(filePath);
+        request.setCoverUrl(coverUrl);
+        request.setGenre(multipartDto.getGenre());
+        request.setDuration(duration);
+        request.setArtistIds(multipartDto.getArtistIds());
+
+        return createTrack(request);
+    }
+
     private TrackDto transformToDto(Track track) {
         TrackDto trackDto = new TrackDto();
         BeanUtils.copyProperties(track, trackDto);
         if (track.getAlbum() != null) {
             trackDto.setAlbumId(track.getAlbum().getAlbumId());
+        }
+        List<Artist> artists = trackArtistRepository.findArtistsByTrackId(track.getTrackId());
+        List<String> artistNames = artists.stream()
+                .map(Artist::getArtistName)
+                .collect(Collectors.toList());
+        trackDto.setArtistNames(artistNames);
+        if (!artists.isEmpty()) {
+            Artist primaryArtist = artists.get(0);
+            trackDto.setPrimaryArtistName(primaryArtist.getArtistName());
+            trackDto.setPrimaryArtistId(primaryArtist.getArtistId());
         }
         return trackDto;
     }

@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { getImageUrl } from '../../helpers/apiClient'
 import { assets } from '../../assets/assets'
 import { usePlayer } from '../../contexts/PlayerContext'
 import { useAuth } from '../../contexts/AuthContext'
-import toast from 'react-hot-toast'
+import toast from '../../helpers/singleToast'
 import { useUserRelations } from '../../contexts/UserRelationsContext'
 import TrackMenu from '../track/TrackMenu'
 
@@ -24,6 +25,10 @@ const TrackProfile = ({ track, index }) => {
   }
   const imagePath = track?.coverUrl || track?.cover_url || track?.imagePath || track?.image_path || track?.image;
   const imageUrl = imagePath ? getImageUrl(imagePath) : null;
+  const artistNames = track?.artistNames || track?.artists;
+  const artistLabel = track?.primaryArtistName 
+    || (artistNames && artistNames.length ? artistNames.join(', ') : track?.artist)
+    || 'Unknown Artist';
 
   const handleLikeToggle = async (event) => {
     event.stopPropagation()
@@ -43,7 +48,6 @@ const TrackProfile = ({ track, index }) => {
         toast.success('Added to liked songs')
       }
     } catch (error) {
-      console.error('Failed to toggle like:', error)
       toast.error('Could not like songs')
     } finally {
       setPendingLike(false)
@@ -60,8 +64,6 @@ const TrackProfile = ({ track, index }) => {
             className="w-full h-full object-cover rounded"
             crossOrigin="anonymous"
             onError={(e) => {
-              console.error('Failed to load cover image:', imageUrl);
-              console.error('Image error details:', e.target.naturalWidth, e.target.naturalHeight, e.target.complete);
               e.target.style.display = 'none'
               const fallback = e.target.nextSibling
               if (fallback) {
@@ -70,7 +72,6 @@ const TrackProfile = ({ track, index }) => {
               }
             }}
             onLoad={() => {
-              console.log('Successfully loaded cover image:', imageUrl);
             }}
           />
         ) : null}
@@ -90,10 +91,20 @@ const TrackProfile = ({ track, index }) => {
       <div className='absolute top-5 right-4 z-10 opacity-0 group-hover/track:opacity-100 transition-opacity'>
         <TrackMenu track={track} onLike={handleLikeToggle} liked={liked} />
       </div>
-      <p className='font-semibold text-sm mb-1'>{track?.title || `Song ${index + 1}`}</p>
-      <p className='text-xs text-[#b3b3b3]'>
-        {track?.album || 'Unknown Album'}
-      </p>
+      <p className='font-semibold text-sm mb-1 truncate'>{track?.title || `Song ${index + 1}`}</p>
+      {track?.primaryArtistId ? (
+        <Link 
+          to={`/artists/${track.primaryArtistId}`}
+          onClick={(e) => e.stopPropagation()}
+          className='text-xs text-[#b3b3b3] truncate hover:text-white hover:underline underline-offset-1 transition-colors inline-block max-w-full cursor-pointer'
+        >
+          {artistLabel}
+        </Link>
+      ) : (
+        <p className='text-xs text-[#b3b3b3] truncate'>
+          {artistLabel}
+        </p>
+      )}
     </div>
   )
 }

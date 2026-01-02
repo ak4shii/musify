@@ -238,6 +238,90 @@ public class FileStorageService {
         }
     }
 
+    public String uploadUserProfileImageToUploads(MultipartFile file, Integer userId) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required and cannot be empty");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !isValidImageFile(originalFilename)) {
+            throw new IllegalArgumentException("Only image files (JPG, JPEG, PNG, GIF) are allowed");
+        }
+
+        if (file.getSize() > maxFileSize) {
+            throw new IllegalArgumentException("File size exceeds maximum allowed size of " + (maxFileSize / 1024 / 1024) + "MB");
+        }
+
+        String fileExtension = getFileExtension(originalFilename);
+        String profileFileName = "profile" + fileExtension.toLowerCase();
+        
+        Path uploadRoot = Paths.get("src/main/resources/uploads");
+        Path userProfilePath = uploadRoot.resolve("users")
+                .resolve(String.valueOf(userId))
+                .resolve("profile");
+        
+        if (!Files.exists(userProfilePath)) {
+            Files.createDirectories(userProfilePath);
+        }
+
+        Path filePath = userProfilePath.resolve(profileFileName);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        return "/uploads/users/" + userId + "/profile/" + profileFileName;
+    }
+
+    public String uploadPlaylistCoverImageToUploads(MultipartFile file, Integer userId, Integer playlistId) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required and cannot be empty");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !isValidImageFile(originalFilename)) {
+            throw new IllegalArgumentException("Only image files (JPG, JPEG, PNG, GIF) are allowed");
+        }
+
+        if (file.getSize() > maxFileSize) {
+            throw new IllegalArgumentException("File size exceeds maximum allowed size of " + (maxFileSize / 1024 / 1024) + "MB");
+        }
+
+        String fileExtension = getFileExtension(originalFilename);
+        String coverFileName = "cover" + fileExtension.toLowerCase();
+        
+        Path uploadRoot = Paths.get("src/main/resources/uploads");
+        Path playlistCoverPath = uploadRoot.resolve("users")
+                .resolve(String.valueOf(userId))
+                .resolve("playlists")
+                .resolve(String.valueOf(playlistId));
+        
+        if (!Files.exists(playlistCoverPath)) {
+            Files.createDirectories(playlistCoverPath);
+        }
+
+        Path filePath = playlistCoverPath.resolve(coverFileName);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        return "/uploads/users/" + userId + "/playlists/" + playlistId + "/" + coverFileName;
+    }
+
+    public void deletePlaylistCoverFolder(Integer userId, Integer playlistId) throws IOException {
+        Path uploadRoot = Paths.get("src/main/resources/uploads");
+        Path playlistCoverPath = uploadRoot.resolve("users")
+                .resolve(String.valueOf(userId))
+                .resolve("playlists")
+                .resolve(String.valueOf(playlistId));
+        
+        if (Files.exists(playlistCoverPath)) {
+            Files.walk(playlistCoverPath)
+                    .sorted((a, b) -> b.compareTo(a))
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                        }
+                    });
+        }
+    }
+
     private void deleteDirectoryRecursively(Path path) throws IOException {
         if (Files.exists(path)) {
             Files.walk(path)

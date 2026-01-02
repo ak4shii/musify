@@ -9,6 +9,7 @@ public class PlaylistDto {
 
     private Integer playlistId;
     private Integer userId;
+    private String userName;
     private String playlistName;
     private String coverUrl;
     private Boolean isPublic;

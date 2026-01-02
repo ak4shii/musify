@@ -1,17 +1,27 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from "react-router-dom";
 import apiClient from '../helpers/apiClient'
 import { useAuth } from '../contexts/AuthContext'
 
 const Login = () => {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, isAuthenticated, user } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'ROLE_ADMIN') {
+        navigate('/admin-panel');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -32,11 +42,7 @@ const Login = () => {
         password: formData.password
       }
       
-      console.log('Sending login request with data:', payload)
       const response = await apiClient.post('/auth/login', payload)
-      
-      console.log('Login response:', response.data)
-      console.log('Login response keys:', response.data ? Object.keys(response.data) : 'no data')
       
       if (response.data) {
         const token = response.data.token || 
@@ -47,9 +53,6 @@ const Login = () => {
         
         if (token) {
           localStorage.setItem('token', token)
-          console.log('Token stored in localStorage:', token.substring(0, 20) + '...')
-        } else {
-          console.warn('No token found in response. Available fields:', Object.keys(response.data))
         }
         
         let userData = null
@@ -63,28 +66,15 @@ const Login = () => {
         }
         
         if (userData && (userData.userName || userData.email)) {
-          console.log('Storing user data:', userData)
           localStorage.setItem('user', JSON.stringify(userData))
           const resolvedUserId = userData.userId ?? userData.id
           if (resolvedUserId != null) {
             localStorage.setItem('userId', resolvedUserId)
           }
           login(userData)
-          
-          const userRole = userData.role
-          if (userRole === 'ROLE_ADMIN') {
-            navigate('/admin-panel')
-          } else {
-            navigate('/')
-          }
-        } else {
-          console.warn('No valid user data found in response:', response.data)
-          navigate('/')
         }
       }
     } catch (err) {
-      console.error('Login error:', err)
-      console.error('Error response:', err.response?.data)
 
       if (err.response?.status === 400) {
         const errorData = err.response.data
@@ -97,7 +87,7 @@ const Login = () => {
           setError('Invalid login data. Please check your input.')
         }
       } else if (err.response?.status === 401) {
-        setError('Invalid email or password. Please try again.')
+        setError(err.response?.data?.message || 'Invalid email or password. Please try again.')
       } else if (err.response?.data?.message) {
         setError(err.response.data.message)
       } else if (err.response?.data?.error) {

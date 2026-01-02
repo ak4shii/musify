@@ -28,6 +28,7 @@ const resolveTrackNumericId = (track) => {
 export const PlayerProvider = ({ children }) => {
   const audioRef = useRef(null);
   const previousAudioSrcRef = useRef(null);
+  const queueRef = useRef([]);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -37,6 +38,13 @@ export const PlayerProvider = ({ children }) => {
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState('off');
   const [trackPool, setTrackPool] = useState([]);
+  const [queue, setQueue] = useState([]);
+  const [historyStack, setHistoryStack] = useState([]);
+  
+  // Keep queueRef in sync with queue state
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,9 +55,10 @@ export const PlayerProvider = ({ children }) => {
         if (token) headers['Authorization'] = `Bearer ${token}`;
         const res = await apiClient.get('/', { headers });
         const pool = res?.data?.tracks || [];
-        if (isMounted) setTrackPool(pool);
+        if (isMounted) {
+          setTrackPool(pool);
+        }
       } catch (err) {
-        console.warn('Unable to load track pool for random next:', err?.message || err);
       }
     };
     loadPool();
@@ -68,34 +77,51 @@ export const PlayerProvider = ({ children }) => {
     return candidates[idx];
   }, [trackPool]);
 
+  const resolveUserIdFromStorage = useCallback(() => {
+    let userId = null;
+    try {
+      const storedUser = typeof window !== 'undefined' ? window.localStorage.getItem('user') : null;
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed?.userId != null) userId = parsed.userId;
+        else if (parsed?.id != null) userId = parsed.id;
+      }
+    } catch (err) {
+    }
+    if (userId == null && typeof window !== 'undefined') {
+      const fallback = window.localStorage.getItem('userId');
+      if (fallback != null) userId = Number(fallback);
+    }
+    return userId;
+  }, []);
+
+  const fetchListeningHistory = useCallback(async () => {
+    try {
+      if (typeof window === 'undefined') return [];
+      const userId = resolveUserIdFromStorage();
+      if (userId == null) return [];
+      const token = window.localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await apiClient.get(`/users/${userId}/listening-history`, { headers });
+      return Array.isArray(res?.data) ? res.data : [];
+    } catch (error) {
+      return [];
+    }
+  }, [resolveUserIdFromStorage]);
+
   const logPlayback = useCallback(async (track) => {
     try {
       if (typeof window === 'undefined') return;
       const trackId = resolveTrackNumericId(track);
       if (trackId == null) return;
 
-      let userId = null;
-      try {
-        const storedUser = window.localStorage.getItem('user');
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          if (parsed?.userId != null) userId = parsed.userId;
-          else if (parsed?.id != null) userId = parsed.id;
-        }
-      } catch (err) {
-        console.warn('Failed to parse stored user for playback history', err);
-      }
-      if (userId == null) {
-        const fallback = window.localStorage.getItem('userId');
-        if (fallback != null) userId = Number(fallback);
-      }
+      const userId = resolveUserIdFromStorage();
       if (userId == null) return;
 
       const token = window.localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await apiClient.post(`/users/${userId}/play/${trackId}`, {}, { headers });
     } catch (error) {
-      console.warn('Unable to record playback history', error);
     }
   }, []);
 
@@ -124,6 +150,13 @@ export const PlayerProvider = ({ children }) => {
       }
     }
     
+    if (currentTrack) {
+      setHistoryStack((prev) => {
+        const next = [...prev, currentTrack];
+        return next.slice(-100); // cap history size
+      });
+    }
+
     logPlayback(track);
     setCurrentTrack(track);
     setCurrentTime(0);
@@ -146,7 +179,6 @@ export const PlayerProvider = ({ children }) => {
     const picked = pickAudioSource(currentTrack);
     const resolved = resolveMediaUrl(picked);
     if (!resolved && currentTrack) {
-      console.warn('No playable audio URL found for track', currentTrack);
     }
     return resolved;
   }, [currentTrack]);
@@ -162,7 +194,6 @@ export const PlayerProvider = ({ children }) => {
             await audioEl.play();
           }
         } catch (error) {
-          console.error('Error playing audio:', error);
           setIsPlaying(false);
         }
       } else {
@@ -187,7 +218,6 @@ export const PlayerProvider = ({ children }) => {
       const handleCanPlay = () => {
         if (isPlaying && currentTrack) {
           audioEl.play().catch((error) => {
-            console.error('Error auto-playing after load:', error);
           });
         }
       };
@@ -216,14 +246,25 @@ export const PlayerProvider = ({ children }) => {
       if (repeatMode === 'one') {
         audioEl.currentTime = 0;
         audioEl.play().catch((err) => {
-          console.error('Error replaying on repeat-one:', err);
           setIsPlaying(false);
         });
         return;
       }
-      const randomNext = pickRandomFromPool(currentTrack);
-      if (randomNext) {
-        setCurrentTrack(randomNext);
+      
+      let nextTrack = null;
+      const currentQueue = queueRef.current;
+      
+      if (currentQueue.length > 0) {
+        nextTrack = currentQueue[0];
+        setQueue((prev) => prev.slice(1));
+      }
+      
+      if (!nextTrack) {
+        nextTrack = pickRandomFromPool(currentTrack);
+      }
+      
+      if (nextTrack) {
+        setCurrentTrack(nextTrack);
         setCurrentTime(0);
         setIsPlaying(true);
       } else {
@@ -283,26 +324,75 @@ export const PlayerProvider = ({ children }) => {
     setPreviousVolume((pv) => (volume > 0 ? volume : (pv > 0 ? pv : 0.7)));
   }, [previousVolume, volume]);
 
-  const playPrevious = useCallback(() => {
+  useEffect(() => {
+    let isMounted = true;
+    const loadHistory = async () => {
+      const history = await fetchListeningHistory();
+      if (isMounted && history.length > 0) {
+        setHistoryStack(history);
+      }
+    };
+    loadHistory();
+    return () => { isMounted = false; };
+  }, [fetchListeningHistory]);
+
+  const playPrevious = useCallback(async () => {
     const audioEl = audioRef.current;
     if (!audioEl) return;
     if (audioEl.currentTime > 3) {
       audioEl.currentTime = 0;
       setCurrentTime(0);
     } else {
-      audioEl.currentTime = 0;
-      setCurrentTime(0);
-      setIsPlaying(false);
-      audioEl.pause();
+      // Try to pop from local history stack; fallback to server history
+      let prevTrack = null;
+      setHistoryStack((prev) => {
+        if (prev.length > 0) {
+          prevTrack = prev[prev.length - 1];
+          return prev.slice(0, -1);
+        }
+        return prev;
+      });
+
+      if (!prevTrack) {
+        const serverHistory = await fetchListeningHistory();
+        if (serverHistory.length > 0) {
+          prevTrack = serverHistory[0];
+          // keep rest (if any) as stack for further prev
+          setHistoryStack(serverHistory.slice(1));
+        }
+      }
+
+      if (prevTrack) {
+        setCurrentTrack(prevTrack);
+        setCurrentTime(0);
+        setIsPlaying(true);
+      } else {
+        audioEl.currentTime = 0;
+        setCurrentTime(0);
+        setIsPlaying(false);
+        audioEl.pause();
+      }
     }
-  }, []);
+  }, [fetchListeningHistory]);
 
   const playNext = useCallback(() => {
     const audioEl = audioRef.current;
     if (!audioEl) return;
-    const randomNext = pickRandomFromPool(currentTrack);
-    if (randomNext) {
-      setCurrentTrack(randomNext);
+    
+    let nextTrack = null;
+    const currentQueue = queueRef.current;
+    
+    if (currentQueue.length > 0) {
+      nextTrack = currentQueue[0];
+      setQueue((prev) => prev.slice(1));
+    }
+    
+    if (!nextTrack) {
+      nextTrack = pickRandomFromPool(currentTrack);
+    }
+    
+    if (nextTrack) {
+      setCurrentTrack(nextTrack);
       setCurrentTime(0);
       setIsPlaying(true);
     } else {
@@ -312,6 +402,11 @@ export const PlayerProvider = ({ children }) => {
       audioEl.pause();
     }
   }, [pickRandomFromPool, currentTrack]);
+
+  const addToQueue = useCallback((track) => {
+    if (!track) return;
+    setQueue((prev) => [...prev, track]);
+  }, []);
 
   const value = useMemo(() => ({
     currentTrack,
@@ -332,9 +427,10 @@ export const PlayerProvider = ({ children }) => {
     toggleMute,
     playPrevious,
     playNext,
-  }), [currentTrack, isPlaying, playTrack, togglePlayPause, toggleShuffle, toggleRepeat, isShuffle, repeatMode, audioSrc, currentTime, duration, seekTo, volume, changeVolume, toggleMute, playPrevious, playNext]);
-
-  console.log("Audio source:", audioSrc);
+    addToQueue,
+    queue,
+    setQueue,
+  }), [currentTrack, isPlaying, playTrack, togglePlayPause, toggleShuffle, toggleRepeat, isShuffle, repeatMode, audioSrc, currentTime, duration, seekTo, volume, changeVolume, toggleMute, playPrevious, playNext, addToQueue, queue]);
 
   return (
     <PlayerContext.Provider value={value}>

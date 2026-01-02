@@ -1,7 +1,9 @@
 package com.musify.backend.service.impl;
 
+import com.musify.backend.dto.AlbumCreateMultipartDto;
 import com.musify.backend.dto.AlbumCreateRequestDto;
 import com.musify.backend.dto.AlbumDto;
+import com.musify.backend.dto.AlbumUpdateMultipartDto;
 import com.musify.backend.dto.AlbumUpdateRequestDto;
 import com.musify.backend.entity.Album;
 import com.musify.backend.entity.AlbumArtist;
@@ -26,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -182,9 +185,83 @@ public class AlbumServiceImpl implements IAlbumService {
                 .collect(Collectors.toList());
     }
 
-    AlbumDto transformToDto(Album album) {
+    @Override
+    public String getFirstArtistNameForAlbum(Integer albumId) {
+        List<AlbumArtist> albumArtists = albumArtistRepository.findAll().stream()
+                .filter(aa -> aa.getAlbum().getAlbumId().equals(albumId))
+                .collect(Collectors.toList());
+        
+        if (albumArtists.isEmpty()) {
+            throw new ResourceNotFoundException("Album not found with id " + albumId + " or has no artists");
+        }
+        
+        return albumArtists.get(0).getArtist().getArtistName();
+    }
+
+    @Override
+    @Transactional
+    public AlbumDto createAlbumFromMultipart(AlbumCreateMultipartDto multipartDto) throws IOException {
+        if (multipartDto.getCoverImage() == null || multipartDto.getCoverImage().isEmpty()) {
+            throw new IllegalArgumentException("Cover image is required");
+        }
+
+        if (multipartDto.getArtistIds() == null || multipartDto.getArtistIds().isEmpty()) {
+            throw new IllegalArgumentException("At least one artist ID is required");
+        }
+
+        Artist firstArtist = artistRepository.findById(multipartDto.getArtistIds().getFirst().longValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id " + multipartDto.getArtistIds().getFirst()));
+
+        String coverUrl = fileStorageService.uploadAlbumCoverImage(
+                multipartDto.getCoverImage(), firstArtist.getArtistName(), multipartDto.getTitle());
+
+        AlbumCreateRequestDto request = new AlbumCreateRequestDto();
+        request.setTitle(multipartDto.getTitle());
+        request.setReleaseDate(java.time.LocalDate.parse(multipartDto.getReleaseDate()));
+        request.setCoverUrl(coverUrl);
+        request.setArtistIds(multipartDto.getArtistIds());
+
+        return createAlbum(request);
+    }
+
+    @Override
+    @Transactional
+    public AlbumDto updateAlbumFromMultipart(Integer albumId, AlbumUpdateMultipartDto multipartDto) throws IOException {
+        AlbumUpdateRequestDto request = new AlbumUpdateRequestDto();
+
+        if (multipartDto.getTitle() != null) {
+            request.setTitle(multipartDto.getTitle());
+        }
+        if (multipartDto.getReleaseDate() != null) {
+            request.setReleaseDate(java.time.LocalDate.parse(multipartDto.getReleaseDate()));
+        }
+
+        if (multipartDto.getCoverImage() != null && !multipartDto.getCoverImage().isEmpty()) {
+            Album album = albumRepository.findById(albumId.longValue())
+                    .orElseThrow(() -> new ResourceNotFoundException("Album not found with id " + albumId));
+            String albumTitle = multipartDto.getTitle() != null ? multipartDto.getTitle() : album.getTitle();
+            String firstArtistName = getFirstArtistNameForAlbum(albumId);
+            String coverUrl = fileStorageService.uploadAlbumCoverImage(
+                    multipartDto.getCoverImage(), firstArtistName, albumTitle);
+            request.setCoverUrl(coverUrl);
+        }
+
+        return updateAlbum(albumId, request);
+    }
+
+    private AlbumDto transformToDto(Album album) {
         AlbumDto albumDto = new AlbumDto();
         BeanUtils.copyProperties(album, albumDto);
+        List<Artist> artists = albumArtistRepository.findArtistsByAlbumId(album.getAlbumId());
+        List<String> artistNames = artists.stream()
+                .map(Artist::getArtistName)
+                .collect(Collectors.toList());
+        albumDto.setArtistNames(artistNames);
+        if (!artists.isEmpty()) {
+            Artist primaryArtist = artists.get(0);
+            albumDto.setPrimaryArtistName(primaryArtist.getArtistName());
+            albumDto.setPrimaryArtistId(primaryArtist.getArtistId());
+        }
         return albumDto;
     }
 

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { usePlaylistModal } from '../contexts/PlaylistModalContext'
-import apiClient from '../helpers/apiClient'
+import apiClient, { getImageUrl } from '../helpers/apiClient'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import Player from '../components/Player'
 import PlaylistCard from '../components/playlist/PlaylistCard'
 import PlaylistFormModal from '../components/playlist/PlaylistFormModal'
 import DeleteConfirmModal from '../components/playlist/DeleteConfirmModal'
-import toast from 'react-hot-toast'
+import toast from '../helpers/singleToast'
 
 const Playlist = () => {
   const { user, isAuthenticated } = useAuth()
@@ -23,6 +23,7 @@ const Playlist = () => {
   const [formData, setFormData] = useState({
     playlistName: '',
     isPublic: true,
+    coverImage: null,
     coverUrl: ''
   })
 
@@ -50,7 +51,6 @@ const Playlist = () => {
       })
       setPlaylists(response.data || [])
     } catch (err) {
-      console.error('Error fetching playlists:', err)
       setError(err.response?.data?.message || 'Failed to load playlists')
     } finally {
       setLoading(false)
@@ -68,24 +68,40 @@ const Playlist = () => {
 
     try {
       const token = localStorage.getItem('token')
+      const formDataToSend = new FormData()
+      
+      if (formData.playlistName) {
+        formDataToSend.append('playlistName', formData.playlistName)
+      }
+      formDataToSend.append('isPublic', formData.isPublic ? 'true' : 'false')
+      
+      if (formData.coverImage && formData.coverImage instanceof File) {
+        formDataToSend.append('coverImage', formData.coverImage)
+      }
+      
+      const config = {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        transformRequest: [(data, headers) => {
+          if (data instanceof FormData) {
+            delete headers['Content-Type']
+          }
+          return data
+        }]
+      }
+      
       await apiClient.put(
         `/users/${userId}/update-playlists/${selectedPlaylist.playlistId}`,
-        {
-          playlistName: formData.playlistName || undefined,
-          isPublic: formData.isPublic,
-          coverUrl: formData.coverUrl || undefined
-        },
-        {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        }
+        formDataToSend,
+        config
       )
       setShowEditModal(false)
       setSelectedPlaylist(null)
-      setFormData({ playlistName: '', isPublic: true, coverUrl: '' })
+      setFormData({ playlistName: '', isPublic: true, coverImage: null, coverUrl: '' })
       toast.success('Playlist updated successfully')
       fetchPlaylists()
     } catch (err) {
-      console.error('Error updating playlist:', err)
       toast.error(err.response?.data?.message || 'Failed to update playlist')
     }
   }
@@ -109,18 +125,20 @@ const Playlist = () => {
       setSelectedPlaylist(null)
       toast.success('Playlist deleted successfully')
       fetchPlaylists()
+      window.dispatchEvent(new CustomEvent('playlistDeleted'))
     } catch (err) {
-      console.error('Error deleting playlist:', err)
       toast.error(err.response?.data?.message || 'Failed to delete playlist')
     }
   }
 
   const openEditModal = (playlist) => {
     setSelectedPlaylist(playlist)
+    const coverUrl = playlist.coverUrl ? getImageUrl(playlist.coverUrl) : ''
     setFormData({
       playlistName: playlist.playlistName || '',
       isPublic: playlist.isPublic !== undefined ? playlist.isPublic : true,
-      coverUrl: playlist.coverUrl || ''
+      coverImage: null,
+      coverUrl: coverUrl
     })
     setShowEditModal(true)
   }
@@ -170,7 +188,10 @@ const Playlist = () => {
         <Sidebar />
         <div className='flex-1 overflow-y-auto custom-scrollbar'>
           <div className='px-6 py-6 space-y-6'>
-            <h1 className='text-3xl md:text-4xl font-extrabold'>Your Playlists</h1>
+            <div>
+              <p className='text-xs uppercase tracking-[0.3em] text-gray-300 mb-2'>Collection</p>
+              <h1 className='text-4xl md:text-6xl font-extrabold mb-4'>Your Playlists</h1>
+            </div>
 
             {loading && (
               <div className='flex items-center justify-center py-12'>

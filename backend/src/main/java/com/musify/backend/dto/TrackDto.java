@@ -3,6 +3,8 @@ package com.musify.backend.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class TrackDto {
@@ -15,4 +17,7 @@ public class TrackDto {
     private String genre;
     private Integer popularity;
     private String duration;
+    private String primaryArtistName;
+    private Integer primaryArtistId;
+    private List<String> artistNames;
 }

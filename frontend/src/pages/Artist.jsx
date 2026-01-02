@@ -10,7 +10,7 @@ import TrackArtistShowProfile from '../components/showProfiles/artistPageProfile
 import { useAuth } from '../contexts/AuthContext';
 import apiClient, { getImageUrl } from '../helpers/apiClient';
 import { useUserRelations } from '../contexts/UserRelationsContext';
-import toast from 'react-hot-toast';
+import toast from '../helpers/singleToast';
 
 const formatNumber = (value) => {
   if (value == null) return null;
@@ -70,7 +70,6 @@ const Artist = () => {
         setTopTracks(normalizedTracks);
         setDiscography(data?.albums || data?.discography || []);
       } catch (err) {
-        console.error('Failed to load artist', err);
         setError('Unable to load artist details. Please try again later.');
       } finally {
         setLoading(false);
@@ -113,8 +112,16 @@ const Artist = () => {
         await followArtist({ ...artist, artistId: resolvedArtistId });
         toast.success('Artist added to follows');
       }
+      
+      const headers = isAuthenticated
+        ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        : {};
+      const { data } = await apiClient.get(`/artists/${artistId}`, { headers });
+      const artistPayload = data?.artist || data || null;
+      if (artistPayload) {
+        setArtist(artistPayload);
+      }
     } catch (err) {
-      console.error('Failed to toggle follow:', err);
       toast.error('Unable to follow status');
     } finally {
       setFollowPending(false);
@@ -157,18 +164,15 @@ const Artist = () => {
                     <h1 className='text-4xl md:text-6xl font-extrabold mb-4'>
                       {artist?.artistName || artist?.name || 'Unknown Artist'}
                     </h1>
-                    <div className='flex flex-wrap items-center gap-4 text-sm text-gray-300'>
+                    <div className='flex flex-wrap items-center gap-4 text-sm text-gray-300 mb-5'>
                       {artist?.genres?.length ? (
                         <span>{artist.genres.join(' • ')}</span>
-                      ) : null}
-                      {artist?.followers ? (
-                        <span>{formatNumber(artist.followers)} followers</span>
                       ) : null}
                       {artist?.monthlyListeners ? (
                         <span>{formatNumber(artist.monthlyListeners)} monthly listeners</span>
                       ) : null}
                     </div>
-                    <div className='mt-5 flex items-center gap-3'>
+                    <div className='flex items-center gap-4'>
                       <button
                         onClick={handleFollowToggle}
                         disabled={followPending || !artist}
@@ -180,6 +184,9 @@ const Artist = () => {
                       >
                         {isFollowing ? 'Following' : 'Follow'}
                       </button>
+                      {artist?.followers != null ? (
+                        <span className='text-sm text-gray-300'>{formatNumber(artist.followers)} {artist.followers === 1 ? 'follower' : 'followers'}</span>
+                      ) : null}
                     </div>
                   </div>
                 </section>

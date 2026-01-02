@@ -1,12 +1,39 @@
 import axios from "axios";
 
 const apiClient = axios.create({
+    withCredentials: true,
     baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
     },
 });
+
+apiClient.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        // const unsafe = /^(post|put|patch|delete)$/i.test(config.method);
+        // const isAuthEndpoint =
+        //     config.url?.includes('/auth/login') ||
+        //     config.url?.includes('/auth/register');
+
+        // if (unsafe && !isAuthEndpoint) {
+        //     const csrf = Cookies.get('XSRF-TOKEN');
+        //     if (csrf) {
+        //         config.headers['X-CSRF-TOKEN'] = csrf;
+        //     }
+        // }
+
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
 
 export const getImageUrl = (imagePath) => {
     if (!imagePath || typeof imagePath !== 'string' || imagePath.trim() === '') {

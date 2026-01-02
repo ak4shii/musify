@@ -1,9 +1,12 @@
 package com.musify.backend.service;
 
+import com.musify.backend.dto.AlbumCreateMultipartDto;
 import com.musify.backend.dto.AlbumCreateRequestDto;
 import com.musify.backend.dto.AlbumDto;
+import com.musify.backend.dto.AlbumUpdateMultipartDto;
 import com.musify.backend.dto.AlbumUpdateRequestDto;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +27,10 @@ public interface IAlbumService {
     void deleteAlbum(Integer albumId);
 
     List<AlbumDto> getAllAlbums();
+
+    String getFirstArtistNameForAlbum(Integer albumId);
+
+    AlbumDto createAlbumFromMultipart(AlbumCreateMultipartDto multipartDto) throws IOException;
+
+    AlbumDto updateAlbumFromMultipart(Integer albumId, AlbumUpdateMultipartDto multipartDto) throws IOException;
 }

@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { usePlayer } from '../../contexts/PlayerContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { assets } from '../../assets/assets'
-import toast from 'react-hot-toast'
+import toast from '../../helpers/singleToast'
 import { useUserRelations } from '../../contexts/UserRelationsContext'
 import TrackMenu from '../track/TrackMenu'
 
@@ -13,6 +14,12 @@ const TrackSearchProfile = ({ track }) => {
   const [pendingLike, setPendingLike] = useState(false)
   const trackId = track?.trackId ?? track?.id
   const liked = isTrackLiked(trackId)
+  const artistNames = track?.artistNames || track?.artists
+  const artistLabel = track?.primaryArtistName 
+    || track?.artistName
+    || track?.artist
+    || (artistNames && artistNames.length ? artistNames.join(', ') : null)
+    || 'Unknown Artist'
 
   const formatDuration = (duration) => {
     if (!duration) return '-'
@@ -56,7 +63,6 @@ const TrackSearchProfile = ({ track }) => {
         toast.success('Added to liked songs')
       }
     } catch (error) {
-      console.error('Failed to toggle search track like:', error)
       toast.error('Could not update liked songs')
     } finally {
       setPendingLike(false)
@@ -105,11 +111,19 @@ const TrackSearchProfile = ({ track }) => {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-medium text-white text-base truncate">{track.title}</h3>
-        <p className="text-sm text-gray-400 truncate">
-          {track.artist && track.album 
-            ? `${track.artist} • ${track.album}`
-            : track.artist || track.album || 'Unknown'}
-        </p>
+        {track?.primaryArtistId ? (
+          <Link 
+            to={`/artists/${track.primaryArtistId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-sm text-gray-400 truncate hover:text-white hover:underline underline-offset-1 transition-colors inline-block max-w-full cursor-pointer"
+          >
+            {artistLabel}
+          </Link>
+        ) : (
+          <p className="text-sm text-gray-400 truncate">
+            {artistLabel}
+          </p>
+        )}
       </div>
       <div className='flex items-center gap-8'>
         <TrackMenu track={track} onLike={handleLikeToggle} liked={liked} />

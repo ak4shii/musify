@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import toast from 'react-hot-toast'
+import toast from '../../helpers/singleToast'
 
 const ArtistFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
   const [formData, setFormData] = useState({
@@ -68,7 +68,6 @@ const ArtistFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
       await onSubmit(formData)
       onClose()
     } catch (error) {
-      console.error('Error submitting form:', error)
     } finally {
       setLoading(false)
     }
@@ -77,15 +76,15 @@ const ArtistFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
   if (!isOpen) return null
 
   return (
-    <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50' onClick={onClose}>
-      <div className='bg-[#282828] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto' onClick={(e) => e.stopPropagation()}>
+    <div className='fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4' onClick={onClose}>
+      <div className='bg-[#282828] rounded-2xl p-6 max-w-md w-full shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto' onClick={(e) => e.stopPropagation()}>
         <h2 className='text-2xl font-bold mb-6'>
           {initialData ? 'Edit Artist' : 'Create Artist'}
         </h2>
         
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div>
-            <label className='block text-sm font-medium mb-2'>Artist Name *</label>
+            <label className='block text-sm font-medium mb-2 text-white/90'>Artist Name *</label>
             <input
               type='text'
               name='artistName'
@@ -93,12 +92,12 @@ const ArtistFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               onChange={handleChange}
               required
               maxLength={150}
-              className='w-full px-4 py-2 bg-[#1a1a1a] border border-white/20 rounded text-white focus:outline-none focus:border-white/40'
+              className='w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all'
             />
           </div>
 
           <div>
-            <label className='block text-sm font-medium mb-2'>Profile Image *</label>
+            <label className='block text-sm font-medium mb-2 text-white/90'>Profile Image *</label>
             {!initialData && (
               <input
                 type='file'
@@ -106,7 +105,7 @@ const ArtistFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 accept='image/*'
                 onChange={handleChange}
                 required={!initialData}
-                className='w-full px-4 py-2 bg-[#1a1a1a] border border-white/20 rounded text-white focus:outline-none focus:border-white/40'
+                className='w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20 file:cursor-pointer custom-file-input-color'
               />
             )}
             {initialData && (
@@ -116,7 +115,7 @@ const ArtistFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                   name='profileImage'
                   accept='image/*'
                   onChange={handleChange}
-                  className='w-full px-4 py-2 bg-[#1a1a1a] border border-white/20 rounded text-white focus:outline-none focus:border-white/40'
+                  className='w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20 file:cursor-pointer custom-file-input-color'
                 />
                 <p className='text-xs text-gray-500'>Leave empty to keep current image</p>
               </div>
@@ -129,29 +128,29 @@ const ArtistFormModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           <div>
-            <label className='block text-sm font-medium mb-2'>Biography *</label>
+            <label className='block text-sm font-medium mb-2 text-white/90'>Biography *</label>
             <textarea
               name='biography'
               value={formData.biography}
               onChange={handleChange}
               required
               rows={4}
-              className='w-full px-4 py-2 bg-[#1a1a1a] border border-white/20 rounded text-white focus:outline-none focus:border-white/40 resize-none'
+              className='w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all resize-none'
             />
           </div>
 
-          <div className='flex gap-3 justify-end pt-4'>
+          <div className='flex gap-3 pt-4'>
             <button
               type='button'
               onClick={onClose}
-              className='px-6 py-2 rounded-full bg-transparent border border-white/20 text-white hover:bg-white/10 transition-colors'
+              className='flex-1 px-4 py-3 rounded-full border border-white/20 text-white hover:bg-white/10 hover:border-white/30 transition-colors font-medium'
             >
               Cancel
             </button>
             <button
               type='submit'
               disabled={loading}
-              className='px-6 py-2 rounded-full bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              className='flex-1 px-4 py-3 rounded-full bg-white text-black font-semibold hover:bg-gray-200 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {loading ? 'Saving...' : initialData ? 'Update' : 'Create'}
             </button>

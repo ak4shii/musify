@@ -19,14 +19,12 @@ export const AuthProvider = ({ children }) => {
               setUser(null)
             }
           } catch (parseError) {
-            console.error('Error parsing user data:', parseError)
             setUser(null)
           }
         } else {
           setUser(null)
         }
       } catch (error) {
-        console.error('Error loading user from localStorage:', error)
         setUser(null)
       } finally {
         setLoading(false)
@@ -55,7 +53,6 @@ export const AuthProvider = ({ children }) => {
         setUser(userData)
       }
     } catch (error) {
-      console.error('Error storing user data:', error)
     }
   }
 

@@ -1,6 +1,7 @@
 package com.musify.backend.security;
 
-import com.musify.backend.filter.JWTTokenValidation;
+import com.musify.backend.filter.JWTTokenValidationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
@@ -39,11 +40,12 @@ public class SecurityConfig {
     @Bean
     @Order(SecurityProperties.BASIC_AUTH_ORDER)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf((csrfConfig) -> csrfConfig
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                        .ignoringRequestMatchers(publicPaths.toArray(new String[0]))
-                )
+//        return http.csrf((csrfConfig) -> csrfConfig
+//                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+//                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+//                        .ignoringRequestMatchers(publicPaths.toArray(new String[0]))
+//                )
+        return http.csrf(csrf -> csrf.disable())
                 .cors((corsConfig) -> corsConfig.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests((requests) -> {
                     publicPaths.forEach(path ->
@@ -51,9 +53,17 @@ public class SecurityConfig {
                     requests.requestMatchers("/admins/**").hasRole("ADMIN");
                     requests.anyRequest().authenticated();
                 })
-                .addFilterBefore(new JWTTokenValidation(publicPaths), BasicAuthenticationFilter.class)
-                .formLogin(withDefaults())
-                .httpBasic(withDefaults())
+                .addFilterBefore(new JWTTokenValidationFilter(publicPaths), org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
+                .anonymous((anonymous) -> anonymous.disable())
+                .exceptionHandling((exceptions) -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
+                        })
+                )
+                .formLogin((form) -> form.disable())
+                .httpBasic((basic) -> basic.disable())
                 .build();
     }
 

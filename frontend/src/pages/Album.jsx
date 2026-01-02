@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -29,7 +29,15 @@ const Album = () => {
           ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
           : {};
         const { data } = await apiClient.get(`/albums/${albumId}`, { headers });
-        const albumPayload = data?.album || data || null;
+        const rawAlbumPayload = data?.album || data || null;
+        const albumPayload = rawAlbumPayload ? {
+          ...rawAlbumPayload,
+          artist: rawAlbumPayload.primaryArtistName ?? (rawAlbumPayload.artistNames && rawAlbumPayload.artistNames.length > 0 ? rawAlbumPayload.artistNames[0] : null) ?? rawAlbumPayload.artist ?? rawAlbumPayload.artistName ?? null,
+          artistName: rawAlbumPayload.primaryArtistName ?? (rawAlbumPayload.artistNames && rawAlbumPayload.artistNames.length > 0 ? rawAlbumPayload.artistNames[0] : null) ?? rawAlbumPayload.artistName ?? rawAlbumPayload.artist ?? null,
+          primaryArtistName: rawAlbumPayload.primaryArtistName ?? null,
+          primaryArtistId: rawAlbumPayload.primaryArtistId ?? null,
+          artistNames: rawAlbumPayload.artistNames ?? null
+        } : null;
         setAlbum(albumPayload);
         
         const rawTracks = data?.tracks || data?.songs || albumPayload?.tracks || [];
@@ -37,7 +45,12 @@ const Album = () => {
           id: track.trackId ?? track.id,
           trackId: track.trackId ?? track.id,
           title: track.title ?? track.name,
-          artist: track.artist ?? track.artistName ?? albumPayload?.artist ?? albumPayload?.artistName ?? null,
+          artist: track.primaryArtistName ?? (track.artistNames && track.artistNames.length > 0 ? track.artistNames[0] : null) ?? track.artist ?? track.artistName ?? albumPayload?.primaryArtistName ?? (albumPayload?.artistNames && albumPayload.artistNames.length > 0 ? albumPayload.artistNames[0] : null) ?? albumPayload?.artist ?? albumPayload?.artistName ?? null,
+          artistName: track.primaryArtistName ?? (track.artistNames && track.artistNames.length > 0 ? track.artistNames[0] : null) ?? track.artistName ?? track.artist ?? null,
+          primaryArtistName: track.primaryArtistName ?? null,
+          primaryArtistId: track.primaryArtistId ?? null,
+          artistNames: track.artistNames ?? null,
+          artists: track.artistNames ?? null,
           album: track.album ?? track.albumTitle ?? albumPayload?.title ?? albumPayload?.name ?? null,
           duration: track.duration ?? track.durationText ?? (track.durationMs ? track.durationMs / 1000 : null),
           durationMs: track.durationMs,
@@ -45,9 +58,20 @@ const Album = () => {
           coverUrl: track.coverUrl ?? track.cover_url ?? track.imagePath ?? track.image_path ?? track.image ?? null
         }));
         setTracks(normalizedTracks);
-        setRelated(data?.moreByArtist || data?.related || []);
+        const rawRelated = data?.moreByArtist || data?.related || [];
+        const normalizedRelated = rawRelated.map(al => ({
+          ...al,
+          id: al.albumId ?? al.id,
+          albumId: al.albumId ?? al.id,
+          artist: al.primaryArtistName ?? (al.artistNames && al.artistNames.length > 0 ? al.artistNames[0] : null) ?? al.artist ?? al.artistName ?? null,
+          artistName: al.primaryArtistName ?? (al.artistNames && al.artistNames.length > 0 ? al.artistNames[0] : null) ?? al.artistName ?? al.artist ?? null,
+          primaryArtistName: al.primaryArtistName ?? null,
+          primaryArtistId: al.primaryArtistId ?? null,
+          artistNames: al.artistNames ?? null,
+          artists: al.artistNames ?? null
+        }));
+        setRelated(normalizedRelated);
       } catch (err) {
-        console.error('Failed to load album', err);
         setError('Unable to load album details. Please try again later.');
       } finally {
         setLoading(false);
@@ -101,19 +125,37 @@ const Album = () => {
                       <span className='text-4xl text-gray-400'>💿</span>
                     )}
                   </div>
-                  <div className='flex-1'>
+                  <div className='flex-1 min-w-0'>
                     <p className='text-xs uppercase tracking-[0.3em] text-gray-300 mb-2'>
                       {album?.type || 'Album'}
                     </p>
-                    <h1 className='text-4xl md:text-6xl font-extrabold mb-4'>
+                    <h1 className='text-4xl md:text-6xl font-extrabold mb-4 truncate'>
                       {album?.title || album?.name || 'Unknown Album'}
                     </h1>
                     <div className='flex flex-wrap items-center gap-3 text-sm text-gray-300'>
-                      {album?.artist || album?.artistName ? (
-                        <span>{album.artist || album.artistName}</span>
-                      ) : null}
-                      {releaseYear ? <span>• {releaseYear}</span> : null}
-                      {totalTracks ? <span>• {totalTracks} tracks</span> : null}
+                      {(() => {
+                        const artistLabel = album?.primaryArtistName 
+                          || (album?.artistNames && album.artistNames.length > 0 ? album.artistNames[0] : null)
+                          || album?.artist 
+                          || album?.artistName;
+                        const artistId = album?.primaryArtistId;
+                        
+                        if (artistLabel) {
+                          return artistId ? (
+                            <Link 
+                              to={`/artists/${artistId}`}
+                              className='truncate max-w-full hover:text-white hover:underline underline-offset-1 transition-colors cursor-pointer'
+                            >
+                              {artistLabel}
+                            </Link>
+                          ) : (
+                            <span className='truncate max-w-full'>{artistLabel}</span>
+                          );
+                        }
+                        return null;
+                      })()}
+                      {releaseYear ? <span className='flex-shrink-0'>• {releaseYear}</span> : null}
+                      {totalTracks ? <span className='flex-shrink-0'>• {totalTracks} tracks</span> : null}
                     </div>
                   </div>
                 </section>

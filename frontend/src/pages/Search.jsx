@@ -40,8 +40,12 @@ const Search = () => {
         id: t.trackId ?? t.id,
         trackId: t.trackId ?? t.id,
         title: t.title ?? t.name,
-        artist: t.artist ?? t.artistName ?? null,
-        artistName: t.artistName ?? t.artist ?? null,
+        artist: t.primaryArtistName ?? (t.artistNames && t.artistNames.length > 0 ? t.artistNames[0] : null) ?? t.artist ?? t.artistName ?? null,
+        artistName: t.primaryArtistName ?? (t.artistNames && t.artistNames.length > 0 ? t.artistNames[0] : null) ?? t.artistName ?? t.artist ?? null,
+        primaryArtistName: t.primaryArtistName ?? null,
+        primaryArtistId: t.primaryArtistId ?? null,
+        artistNames: t.artistNames ?? null,
+        artists: t.artistNames ?? null,
         album: t.album ?? t.albumTitle ?? null,
         albumTitle: t.albumTitle ?? t.album ?? null,
         duration: t.duration ?? t.durationText ?? null,
@@ -69,8 +73,12 @@ const Search = () => {
         id: al.albumId ?? al.id,
         albumId: al.albumId ?? al.id,
         title: al.title ?? al.name,
-        artist: al.artist ?? al.artistName ?? null,
-        artistName: al.artistName ?? al.artist ?? null,
+        artist: al.primaryArtistName ?? (al.artistNames && al.artistNames.length > 0 ? al.artistNames[0] : null) ?? al.artist ?? al.artistName ?? null,
+        artistName: al.primaryArtistName ?? (al.artistNames && al.artistNames.length > 0 ? al.artistNames[0] : null) ?? al.artistName ?? al.artist ?? null,
+        primaryArtistName: al.primaryArtistName ?? null,
+        primaryArtistId: al.primaryArtistId ?? null,
+        artistNames: al.artistNames ?? null,
+        artists: al.artistNames ?? null,
         year: al.year ?? al.releaseYear ?? null,
         coverUrl: al.coverUrl ?? al.cover_url ?? al.imagePath ?? al.image_path ?? al.image ?? null,
         cover_url: al.cover_url ?? al.coverUrl ?? null,
@@ -79,16 +87,27 @@ const Search = () => {
         image: al.image ?? null
       }))
 
+      const normalizePlaylists = (pls) => (pls || []).map(p => ({
+        id: p.playlistId ?? p.id,
+        playlistId: p.playlistId ?? p.id,
+        title: p.playlistName ?? p.title ?? p.name,
+        playlistName: p.playlistName ?? p.title ?? p.name,
+        image: p.coverUrl ?? p.cover_url ?? p.imagePath ?? p.image_path ?? p.image ?? null,
+        coverUrl: p.coverUrl ?? p.cover_url ?? null,
+        userId: p.userId ?? null,
+        owner: p.userName ?? p.creator ?? (p.userId ? `User ${p.userId}` : null),
+        isPublic: p.isPublic ?? p.public ?? null
+      }))
+
       const results = {
         tracks: normalizeTracks(data.tracks ?? []),
         artists: normalizeArtists(data.artists ?? []),
         albums: normalizeAlbums(data.albums ?? []),
-        playlists: Array.isArray(data.playlists) ? data.playlists : []
+        playlists: normalizePlaylists(data.playlists ?? [])
       }
 
       setSearchResults(results)
     } catch (err) {
-      console.error('Search failed', err)
       setSearchResults({ tracks: [], artists: [], albums: [], playlists: [] })
     } finally {
       setLoading(false)
@@ -136,6 +155,19 @@ const Search = () => {
       )
     }
 
+    if (type === 'playlist') {
+      return (
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-white mb-4 px-6">{title}</h2>
+          <ScrollableRow id={`row-search-playlists`} title="" showTitle={false}>
+            {items.map((playlist, i) => (
+              <PlaylistSearchProfile key={playlist.id || i} playlist={playlist} index={i} />
+            ))}
+          </ScrollableRow>
+        </div>
+      )
+    }
+
     const renderCard = (item) => {
       switch (type) {
         case 'track':
@@ -149,7 +181,7 @@ const Search = () => {
 
     return (
       <div className="mb-8">
-        <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
+        <h2 className="text-xl font-bold text-white mb-4 px-6">{title}</h2>
         <div className={`grid ${type === 'track' ? 'gap-1' : 'gap-2'} ${type === 'album' || type === 'playlist' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5' : 'grid-cols-1'}`}>
           {items.map(item => renderCard(item))}
         </div>

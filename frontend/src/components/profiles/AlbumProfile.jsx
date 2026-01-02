@@ -31,7 +31,32 @@ const AlbumProfile = ({ album, index }) => {
             💿
           </div>
         </div>
-        <p className='font-semibold text-sm mb-1'>{album?.title || `Album ${index + 1}`}</p>
+        <p className='font-semibold text-sm mb-1 truncate'>{album?.title || `Album ${index + 1}`}</p>
+        {(() => {
+          const artistLabel = album?.primaryArtistName 
+            || (album?.artistNames && album.artistNames.length > 0 ? album.artistNames[0] : null)
+            || album?.artistName
+            || album?.artist
+            || '';
+          const artistId = album?.primaryArtistId;
+          
+        if (artistId && artistLabel) {
+          return (
+            <Link 
+              to={`/artists/${artistId}`}
+              onClick={(e) => e.stopPropagation()}
+              className='text-xs text-gray-400 truncate hover:text-white hover:underline underline-offset-1 transition-colors inline-block max-w-full cursor-pointer'
+            >
+              {artistLabel}
+            </Link>
+          );
+        }
+          return (
+            <p className='text-xs text-gray-400 truncate'>
+              {artistLabel}
+            </p>
+          );
+        })()}
       </div>
     )
   }
@@ -59,7 +84,32 @@ const AlbumProfile = ({ album, index }) => {
           💿
         </div>
       </div>
-      <p className='font-semibold text-sm mb-1'>{album?.title || `Album ${index + 1}`}</p>
+      <p className='font-semibold text-sm mb-1 truncate'>{album?.title || `Album ${index + 1}`}</p>
+      {(() => {
+        const artistLabel = album?.primaryArtistName 
+          || (album?.artistNames && album.artistNames.length > 0 ? album.artistNames[0] : null)
+          || album?.artistName
+          || album?.artist
+          || '';
+        const artistId = album?.primaryArtistId;
+        
+        if (artistId && artistLabel) {
+          return (
+            <Link 
+              to={`/artists/${artistId}`}
+              onClick={(e) => e.stopPropagation()}
+              className='text-xs text-gray-400 truncate hover:text-white hover:underline underline-offset-1 transition-colors inline-block max-w-full cursor-pointer'
+            >
+              {artistLabel}
+            </Link>
+          );
+        }
+        return (
+          <p className='text-xs text-gray-400 truncate'>
+            {artistLabel}
+          </p>
+        );
+      })()}
     </Link>
   )
 }

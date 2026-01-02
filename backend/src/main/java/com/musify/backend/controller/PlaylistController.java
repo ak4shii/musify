@@ -1,9 +1,9 @@
 package com.musify.backend.controller;
 
-import com.musify.backend.dto.PlaylistCreateRequestDto;
+import com.musify.backend.dto.PlaylistCreateMultipartDto;
 import com.musify.backend.dto.PlaylistDetailResponseDto;
 import com.musify.backend.dto.PlaylistDto;
-import com.musify.backend.dto.PlaylistUpdateRequestDto;
+import com.musify.backend.dto.PlaylistUpdateMultipartDto;
 import com.musify.backend.dto.TrackDto;
 import com.musify.backend.exception.ResourceNotFoundException;
 import com.musify.backend.service.IPlaylistService;
@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -38,14 +39,11 @@ public class PlaylistController {
                 .body(new PlaylistDetailResponseDto(playlist, tracks));
     }
 
-    @PostMapping("/users/{userId}/create-playlist")
-    public ResponseEntity<String> createPlaylist(@PathVariable Long userId, @RequestBody PlaylistCreateRequestDto request) {
-        iPlaylistService.createPlaylist(
-                userId,
-                request.getPlaylistName(),
-                request.getIsPublic(),
-                request.getCoverUrl()
-        );
+    @PostMapping(value = "/users/{userId}/create-playlist", consumes = {"multipart/form-data"})
+    public ResponseEntity<String> createPlaylist(
+            @PathVariable Long userId,
+            @Valid @ModelAttribute PlaylistCreateMultipartDto multipartDto) throws IOException {
+        iPlaylistService.createPlaylistFromMultipart(userId, multipartDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("Playlist created successfully");
     }
@@ -74,13 +72,13 @@ public class PlaylistController {
                 .body("Playlist deleted successfully");
     }
 
-    @PutMapping("/users/{userId}/update-playlists/{playlistId}")
+    @PutMapping(value = "/users/{userId}/update-playlists/{playlistId}", consumes = {"multipart/form-data"})
     public ResponseEntity<PlaylistDto> updatePlaylist(
             @PathVariable Long userId,
             @PathVariable Long playlistId,
-            @Valid @RequestBody PlaylistUpdateRequestDto request) {
+            @Valid @ModelAttribute PlaylistUpdateMultipartDto multipartDto) throws IOException {
         iPlaylistService.checkPlaylistOwner(userId, playlistId);
-        PlaylistDto playlist = iPlaylistService.updatePlaylist(playlistId, request);
+        PlaylistDto playlist = iPlaylistService.updatePlaylistFromMultipart(playlistId, multipartDto);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(playlist);
     }

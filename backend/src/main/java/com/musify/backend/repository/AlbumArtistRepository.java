@@ -2,6 +2,7 @@ package com.musify.backend.repository;
 
 import com.musify.backend.entity.Album;
 import com.musify.backend.entity.AlbumArtist;
+import com.musify.backend.entity.Artist;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,4 +17,7 @@ public interface AlbumArtistRepository extends JpaRepository<AlbumArtist,Long> {
 
     @Query("SELECT aa FROM AlbumArtist aa WHERE aa.album.albumId = :albumId AND aa.artist.artistId = :artistId")
     Optional<AlbumArtist> findByAlbumIdAndArtistId(@Param("albumId") Integer albumId, @Param("artistId") Integer artistId);
+
+    @Query("SELECT aa.artist FROM AlbumArtist aa WHERE aa.album.albumId = :albumId")
+    List<Artist> findArtistsByAlbumId(@Param("albumId") Integer albumId);
 }

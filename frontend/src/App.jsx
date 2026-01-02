@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UserRelationsProvider } from "./contexts/UserRelationsContext";
 import { PlaylistModalProvider } from "./contexts/PlaylistModalContext";
+import { UserModalProvider } from "./contexts/UserModalContext";
 
 import Home from "./pages/Home";
 import Search from "./pages/Search";
@@ -24,7 +25,8 @@ function App() {
     <AuthProvider>
       <UserRelationsProvider>
         <PlaylistModalProvider>
-          <Routes>
+          <UserModalProvider>
+            <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search  />} />
           <Route path="/support" element={<Support />} />
@@ -37,7 +39,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin-panel" element={<AdminRoute><AdminPanel /></AdminRoute>} />
-          </Routes>
+            </Routes>
+          </UserModalProvider>
         </PlaylistModalProvider>
       </UserRelationsProvider>
     </AuthProvider>

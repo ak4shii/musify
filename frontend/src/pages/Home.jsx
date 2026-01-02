@@ -30,12 +30,21 @@ const Home = () => {
         if (response.data) {
           setSongs(response.data.tracks || []);
           setArtists(response.data.artists || []);
-          setAlbums(response.data.albums || []);
+          const rawAlbums = response.data.albums || [];
+          const normalizedAlbums = rawAlbums.map(al => ({
+            ...al,
+            id: al.albumId ?? al.id,
+            albumId: al.albumId ?? al.id,
+            artist: al.primaryArtistName ?? (al.artistNames && al.artistNames.length > 0 ? al.artistNames[0] : null) ?? al.artist ?? al.artistName ?? null,
+            artistName: al.primaryArtistName ?? (al.artistNames && al.artistNames.length > 0 ? al.artistNames[0] : null) ?? al.artistName ?? al.artist ?? null,
+            primaryArtistName: al.primaryArtistName ?? null,
+            primaryArtistId: al.primaryArtistId ?? null,
+            artistNames: al.artistNames ?? null,
+            artists: al.artistNames ?? null
+          }));
+          setAlbums(normalizedAlbums);
         }
       } catch (err) {
-        console.error('Error fetching data:', err);
-        console.error('Error details:', err.response?.data || err.message);
-        console.error('Error status:', err.response?.status);
         setError(`Failed to load data: ${err.response?.status ? `HTTP ${err.response.status}` : err.message}`);
       } finally {
         setLoading(false);

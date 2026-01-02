@@ -6,8 +6,6 @@ VALUES
      'Japanese dream pop duo known for ethereal melodies and chill electronic vibes.', 16, 'admin'),
     ('Mass of the Fermenting Dregs', 'static/mass-of-the-fermenting-dregs/profile_photo/mass-of-the-fermenting-dregs.jpg',
      'Japanese alternative rock and shoegaze band formed in 2002, known for energetic performances.', 17, 'admin'),
-    ('kinoue64', 'static/kinoue64/profile_photo/kinoue64.jpg',
-     'Japanese electronic producer known for ambient and melancholic chiptune soundtracks.', 18, 'admin'),
     ('Mowmow Lulu Gyaban', 'static/mowmow-lulu-gyaban/profile_photo/mowmow-lulu-gyaban.jpg',
      'Eccentric Japanese rock band blending funk, disco, and absurd humor.', 19, 'admin');
 
@@ -25,7 +23,7 @@ VALUES
     (2, 2),
     (3, 3),
     (4, 3),
-    (5, 5);
+    (5, 4);
 
 INSERT INTO Track (album_id, title, duration, file_path, cover_url, genre, popularity, created_by)
 VALUES
@@ -56,5 +54,5 @@ VALUES
     (6, 3),
     (7, 3),
     (8, 3),
-    (9, 5),
-    (10, 5);
+    (9, 4),
+    (10, 4);

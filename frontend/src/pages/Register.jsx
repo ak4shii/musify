@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from "react-router-dom";
 import apiClient from '../helpers/apiClient'
+import { useAuth } from '../contexts/AuthContext'
 
 const Register = () => {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const [formData, setFormData] = useState({
     displayName: '',
     email: '',
@@ -15,6 +17,12 @@ const Register = () => {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/')
+    }
+  }, [isAuthenticated, navigate])
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -80,18 +88,12 @@ const Register = () => {
         dateOfBirth: dateOfBirth
       }
       
-      console.log('Sending register request with data:', payload)
-      
       const response = await apiClient.post('/auth/register', payload)
-      
-      console.log('Register response:', response.data)
       
       if (response.data) {
         navigate('/login')
       }
     } catch (err) {
-      console.error('Register error:', err)
-      console.error('Error response:', err.response?.data)
       
       if (err.response?.status === 400) {
         const errorData = err.response.data

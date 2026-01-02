@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -14,4 +15,7 @@ public class AlbumDto {
     private String coverUrl;
     private LocalDate releaseDate;
     private Integer popularity;
+    private String primaryArtistName;
+    private Integer primaryArtistId;
+    private List<String> artistNames;
 }

@@ -1,9 +1,11 @@
 package com.musify.backend.service;
 
+import com.musify.backend.dto.TrackCreateMultipartDto;
 import com.musify.backend.dto.TrackCreateRequestDto;
 import com.musify.backend.dto.TrackDto;
 import com.musify.backend.dto.TrackUpdateRequestDto;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +28,6 @@ public interface ITrackService {
     List<TrackDto> getAllTracks();
 
     Optional<TrackDto> getTrackById(Integer trackId);
+
+    TrackDto createTrackFromMultipart(TrackCreateMultipartDto multipartDto) throws IOException;
 }

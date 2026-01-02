@@ -60,7 +60,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new LoginResponseDto(HttpStatus.OK.getReasonPhrase(), userDto, jwtToken));
         } catch (BadCredentialsException e) {
-            return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid username and password");
+            return buildErrorResponse(HttpStatus.UNAUTHORIZED, e.getMessage());
         } catch (AuthenticationException e) {
             return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication failed");
         } catch (Exception e) {
@@ -93,7 +93,6 @@ public class AuthController {
         BeanUtils.copyProperties(registerRequestDto, user);
         user.setPasswordHash(passwordEncoder.encode(registerRequestDto.getPassword()));
         user.setRole("ROLE_CUSTOMER");
-        user.setCreatedBy(registerRequestDto.getEmail());
         user.setEnabled(true);
         userRepository.save(user);
         return ResponseEntity.status(HttpStatus.CREATED).body("Register successfully");

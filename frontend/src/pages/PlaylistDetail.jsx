@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar'
 import Player from '../components/Player'
 import PlaylistTrackItem from '../components/playlist/PlaylistTrackItem'
 import AddTrackModal from '../components/playlist/AddTrackModal'
-import toast from 'react-hot-toast'
+import toast from '../helpers/singleToast'
 
 const PlaylistDetail = () => {
   const { playlistId } = useParams()
@@ -41,7 +41,6 @@ const PlaylistDetail = () => {
       setPlaylist(response.data?.playlist || null)
       setTracks(response.data?.tracks || [])
     } catch (err) {
-      console.error('Error fetching playlist details:', err)
       setError(err.response?.data?.message || 'Failed to load playlist details')
     } finally {
       setLoading(false)
@@ -56,7 +55,6 @@ const PlaylistDetail = () => {
       })
       setAvailableTracks(response.data?.tracks || [])
     } catch (err) {
-      console.error('Error fetching tracks:', err)
       toast.error('Failed to load tracks')
     }
   }
@@ -82,7 +80,6 @@ const PlaylistDetail = () => {
       setSearchQuery('')
       fetchPlaylistDetails()
     } catch (err) {
-      console.error('Error adding track:', err)
       toast.error(err.response?.data?.message || 'Failed to add track')
     }
   }
@@ -105,7 +102,6 @@ const PlaylistDetail = () => {
       toast.success('Track removed from playlist')
       fetchPlaylistDetails()
     } catch (err) {
-      console.error('Error removing track:', err)
       toast.error(err.response?.data?.message || 'Failed to remove track')
     }
   }
@@ -212,7 +208,7 @@ const PlaylistDetail = () => {
                 )}
               </div>
               <div className='flex-1'>
-                <p className='text-xs uppercase tracking-wider text-white/60 mb-2'>Playlist</p>
+                <p className='text-xs uppercase tracking-[0.3em] text-gray-300 mb-2'>Playlist</p>
                 <h1 className='text-4xl md:text-6xl font-extrabold mb-4'>{playlist.playlistName}</h1>
                 <div className='flex flex-wrap items-center gap-4 text-sm text-gray-300'>
                   <span>{tracks.length} {tracks.length === 1 ? 'track' : 'tracks'}</span>

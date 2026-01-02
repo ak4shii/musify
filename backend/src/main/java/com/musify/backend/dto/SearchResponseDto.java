@@ -14,4 +14,5 @@ public class SearchResponseDto {
     private List<TrackDto> tracks;
     private List<AlbumDto> albums;
     private List<ArtistDto> artists;
+    private List<PlaylistDto> playlists;
 }

@@ -3,7 +3,6 @@ import ScrollableRow from './ScrollableRow'
 import TrackProfile from './profiles/TrackProfile'
 import ArtistProfile from './profiles/ArtistProfile'
 import AlbumProfile from './profiles/AlbumProfile'
-import FeatureChart from './profiles/FeatureChart'
 
 const Display = ({ songs, artists, albums, loading, error }) => {
   if (loading) {
@@ -62,15 +61,6 @@ const Display = ({ songs, artists, albums, loading, error }) => {
           )) : (
             <div className='text-center text-gray-400 py-8'>
               <p>No albums available</p>
-            </div>
-          )}
-        </ScrollableRow>
-        <ScrollableRow id='row-charts' title='Feature Charts' className='pb-12'>
-          {songs.length > 0 ? songs.slice(0, 10).map((song, i) => (
-            <FeatureChart key={song.id || i} track={song} index={i} />
-          )) : (
-            <div className='text-center text-gray-400 py-8'>
-              <p>No charts available</p>
             </div>
           )}
         </ScrollableRow>

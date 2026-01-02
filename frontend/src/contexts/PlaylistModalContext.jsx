@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 import apiClient from '../helpers/apiClient'
 import PlaylistFormModal from '../components/playlist/PlaylistFormModal'
-import toast from 'react-hot-toast'
+import toast from '../helpers/singleToast'
 
 const PlaylistModalContext = createContext(null)
 
@@ -12,6 +12,7 @@ export const PlaylistModalProvider = ({ children }) => {
   const [formData, setFormData] = useState({
     playlistName: '',
     isPublic: true,
+    coverImage: null,
     coverUrl: ''
   })
 
@@ -23,13 +24,13 @@ export const PlaylistModalProvider = ({ children }) => {
   }
 
   const openCreateModal = () => {
-    setFormData({ playlistName: '', isPublic: true, coverUrl: '' })
+    setFormData({ playlistName: '', isPublic: true, coverImage: null, coverUrl: '' })
     setShowCreateModal(true)
   }
 
   const closeCreateModal = () => {
     setShowCreateModal(false)
-    setFormData({ playlistName: '', isPublic: true, coverUrl: '' })
+    setFormData({ playlistName: '', isPublic: true, coverImage: null, coverUrl: '' })
   }
 
   const handleCreate = useCallback(async (e) => {
@@ -42,24 +43,50 @@ export const PlaylistModalProvider = ({ children }) => {
 
     try {
       const token = localStorage.getItem('token')
-      await apiClient.post(
-        `/users/${userId}/create-playlist`,
-        {
-          playlistName: formData.playlistName,
-          isPublic: formData.isPublic,
-          coverUrl: formData.coverUrl || null
-        },
-        {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        }
-      )
-      closeCreateModal()
-      toast.success('Playlist created successfully')
+      const formDataToSend = new FormData()
+      formDataToSend.append('playlistName', formData.playlistName)
+      formDataToSend.append('isPublic', formData.isPublic ? 'true' : 'false')
       
-      window.dispatchEvent(new CustomEvent('playlistCreated'))
+      if (formData.coverImage && formData.coverImage instanceof File) {
+        formDataToSend.append('coverImage', formData.coverImage)
+      }
+      
+      const config = {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        transformRequest: [(data, headers) => {
+          // Remove Content-Type to let axios automatically set multipart/form-data with boundary for FormData
+          if (data instanceof FormData) {
+            delete headers['Content-Type']
+          }
+          return data
+        }]
+      }
+      
+      const response = await apiClient.post(
+        `/users/${userId}/create-playlist`,
+        formDataToSend,
+        config
+      )
+      
+      if (response.status === 201 || response.status === 200) {
+        closeCreateModal()
+        toast.success('Playlist created successfully')
+        window.dispatchEvent(new CustomEvent('playlistCreated'))
+      } else {
+        throw new Error(`Unexpected status: ${response.status}`)
+      }
     } catch (err) {
-      console.error('Error creating playlist:', err)
-      toast.error(err.response?.data?.message || 'Failed to create playlist')
+      if (err.code === 'ECONNABORTED') {
+        toast.error('Request timeout - backend may not be responding')
+      } else if (err.code === 'ERR_NETWORK') {
+        toast.error('Network error - check if backend is running')
+      } else if (err.response) {
+        toast.error(err.response?.data?.message || `Error: ${err.response.status}`)
+      } else {
+        toast.error('Failed to create playlist - no response from server')
+      }
     }
   }, [formData, user])
 

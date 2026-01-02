@@ -1,6 +1,14 @@
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 
 const PlaylistFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title, submitLabel = 'Save' }) => {
+  const fileInputRef = useRef(null)
+  
+  useEffect(() => {
+    if (!isOpen && formData.coverUrl && formData.coverUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(formData.coverUrl)
+    }
+  }, [isOpen, formData.coverUrl])
+  
   if (!isOpen) return null
 
   return (
@@ -21,14 +29,47 @@ const PlaylistFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, t
             />
           </div>
           <div>
-            <label className='block text-sm font-medium mb-2 text-white/90'>Cover URL (optional)</label>
+            <label className='block text-sm font-medium mb-2 text-white/90'>Cover Image (optional)</label>
             <input
-              type='text'
-              value={formData.coverUrl}
-              onChange={(e) => setFormData({ ...formData, coverUrl: e.target.value })}
-              className='w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all'
-              placeholder='Enter cover image URL'
+              ref={fileInputRef}
+              key={isOpen ? 'open' : 'closed'}
+              type='file'
+              accept='image/*'
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  if (formData.coverUrl && formData.coverUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(formData.coverUrl)
+                  }
+                  setFormData({ ...formData, coverImage: file, coverUrl: URL.createObjectURL(file) })
+                }
+              }}
+              className='w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20 file:cursor-pointer custom-file-input-color'
             />
+            {formData.coverUrl && (
+              <div className='mt-3'>
+                <img 
+                  src={formData.coverUrl} 
+                  alt='Cover preview' 
+                  className='w-32 h-32 object-cover rounded-lg border border-white/20'
+                />
+                <button
+                  type='button'
+                  onClick={() => {
+                    if (formData.coverUrl && formData.coverUrl.startsWith('blob:')) {
+                      URL.revokeObjectURL(formData.coverUrl)
+                    }
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = ''
+                    }
+                    setFormData({ ...formData, coverImage: null, coverUrl: '' })
+                  }}
+                  className='mt-2 text-xs text-red-400 hover:text-red-300'
+                >
+                  Remove image
+                </button>
+              </div>
+            )}
           </div>
           <div className='flex items-center gap-3'>
             <input

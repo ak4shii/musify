@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Navigate, useNavigate } from 'react-router-dom'
 import apiClient from '../helpers/apiClient'
-import toast from 'react-hot-toast'
+import toast from '../helpers/singleToast'
 
 import AdminTable from '../components/admin/AdminTable'
 import ArtistFormModal from '../components/admin/ArtistFormModal'
@@ -10,7 +10,6 @@ import AlbumFormModal from '../components/admin/AlbumFormModal'
 import TrackFormModal from '../components/admin/TrackFormModal'
 import DeleteConfirmModal from '../components/admin/DeleteConfirmModal'
 import UserManagement from '../components/admin/UserManagement'
-import { getImageUrl } from '../helpers/apiClient'
 
 const AdminPanel = () => {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth()
@@ -18,8 +17,11 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('artists')
   
   const [artists, setArtists] = useState([])
+  const [artistSearch, setArtistSearch] = useState('')
   const [albums, setAlbums] = useState([])
+  const [albumSearch, setAlbumSearch] = useState('')
   const [tracks, setTracks] = useState([])
+  const [trackSearch, setTrackSearch] = useState('')
   
   const [showArtistModal, setShowArtistModal] = useState(false)
   const [showAlbumModal, setShowAlbumModal] = useState(false)
@@ -39,16 +41,30 @@ const AdminPanel = () => {
 
   const getToken = () => localStorage.getItem('token')
 
+  const handleAdminAuthError = (error) => {
+    if (error?.response?.status === 401) {
+      toast.error('Session expired. Please log in again.')
+      logout()
+      navigate('/login')
+      return true
+    }
+    return false
+  }
+
   const fetchArtists = async () => {
     try {
       setLoading(prev => ({ ...prev, artists: true }))
       const response = await apiClient.get('/admins/artists', {
         headers: getToken() ? { 'Authorization': `Bearer ${getToken()}` } : {}
       })
-      setArtists(response.data || [])
+      const list = Array.isArray(response.data) ? [...response.data] : []
+      list.sort((a, b) => (a?.artistId ?? 0) - (b?.artistId ?? 0))
+      setArtists(list)
     } catch (error) {
-      console.error('Error fetching artists:', error)
-      toast.error('Failed to load artists')
+      if (!handleAdminAuthError(error)) {
+        toast.error(error?.response?.data?.message || error?.response?.data?.error || 'Failed to load artists')
+      }
+      setArtists([])
     } finally {
       setLoading(prev => ({ ...prev, artists: false }))
     }
@@ -60,10 +76,14 @@ const AdminPanel = () => {
       const response = await apiClient.get('/admins/albums', {
         headers: getToken() ? { 'Authorization': `Bearer ${getToken()}` } : {}
       })
-      setAlbums(response.data || [])
+      const list = Array.isArray(response.data) ? [...response.data] : []
+      list.sort((a, b) => (a?.albumId ?? 0) - (b?.albumId ?? 0))
+      setAlbums(list)
     } catch (error) {
-      console.error('Error fetching albums:', error)
-      toast.error('Failed to load albums')
+      if (!handleAdminAuthError(error)) {
+        toast.error(error?.response?.data?.message || error?.response?.data?.error || 'Failed to load albums')
+      }
+      setAlbums([])
     } finally {
       setLoading(prev => ({ ...prev, albums: false }))
     }
@@ -75,14 +95,36 @@ const AdminPanel = () => {
       const response = await apiClient.get('/admins/tracks', {
         headers: getToken() ? { 'Authorization': `Bearer ${getToken()}` } : {}
       })
-      setTracks(response.data || [])
+      const list = Array.isArray(response.data) ? [...response.data] : []
+      list.sort((a, b) => (a?.trackId ?? 0) - (b?.trackId ?? 0))
+      setTracks(list)
     } catch (error) {
-      console.error('Error fetching tracks:', error)
-      toast.error('Failed to load tracks')
+      if (!handleAdminAuthError(error)) {
+        toast.error(error?.response?.data?.message || error?.response?.data?.error || 'Failed to load tracks')
+      }
+      setTracks([])
     } finally {
       setLoading(prev => ({ ...prev, tracks: false }))
     }
   }
+
+  const filteredArtists = artists.filter((a) => {
+    const q = artistSearch.trim().toLowerCase()
+    if (!q) return true
+    return String(a?.artistName ?? '').toLowerCase().includes(q)
+  })
+
+  const filteredAlbums = albums.filter((a) => {
+    const q = albumSearch.trim().toLowerCase()
+    if (!q) return true
+    return String(a?.title ?? '').toLowerCase().includes(q)
+  })
+
+  const filteredTracks = tracks.filter((t) => {
+    const q = trackSearch.trim().toLowerCase()
+    if (!q) return true
+    return String(t?.title ?? '').toLowerCase().includes(q)
+  })
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.role === 'ROLE_ADMIN') {
@@ -132,8 +174,7 @@ const AdminPanel = () => {
       toast.success('Artist created successfully')
       fetchArtists()
     } catch (error) {
-      console.error('Error creating artist:', error)
-      toast.error(error.response?.data?.message || error.response?.data || 'Failed to create artist')
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to create artist')
       throw error
     }
   }
@@ -160,8 +201,7 @@ const AdminPanel = () => {
       toast.success('Artist updated successfully')
       fetchArtists()
     } catch (error) {
-      console.error('Error updating artist:', error)
-      toast.error(error.response?.data?.message || error.response?.data || 'Failed to update artist')
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to update artist')
       throw error
     }
   }
@@ -176,7 +216,6 @@ const AdminPanel = () => {
       setShowDeleteModal(false)
       setDeletingItem(null)
     } catch (error) {
-      console.error('Error deleting artist:', error)
       toast.error('Failed to delete artist')
     }
   }
@@ -200,8 +239,7 @@ const AdminPanel = () => {
       toast.success('Album created successfully')
       fetchAlbums()
     } catch (error) {
-      console.error('Error creating album:', error)
-      toast.error(error.response?.data?.message || error.response?.data || 'Failed to create album')
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to create album')
       throw error
     }
   }
@@ -228,8 +266,7 @@ const AdminPanel = () => {
       toast.success('Album updated successfully')
       fetchAlbums()
     } catch (error) {
-      console.error('Error updating album:', error)
-      toast.error(error.response?.data?.message || error.response?.data || 'Failed to update album')
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to update album')
       throw error
     }
   }
@@ -244,7 +281,6 @@ const AdminPanel = () => {
       setShowDeleteModal(false)
       setDeletingItem(null)
     } catch (error) {
-      console.error('Error deleting album:', error)
       toast.error('Failed to delete album')
     }
   }
@@ -271,8 +307,7 @@ const AdminPanel = () => {
       toast.success('Track created successfully')
       fetchTracks()
     } catch (error) {
-      console.error('Error creating track:', error)
-      toast.error(error.response?.data?.message || error.response?.data || 'Failed to create track')
+      toast.error(error.response?.data?.message || error.response?.data?.error || 'Failed to create track')
       throw error
     }
   }
@@ -286,7 +321,6 @@ const AdminPanel = () => {
       toast.success('Track updated successfully')
       fetchTracks()
     } catch (error) {
-      console.error('Error updating track:', error)
       toast.error(error.response?.data?.message || 'Failed to update track')
       throw error
     }
@@ -302,7 +336,6 @@ const AdminPanel = () => {
       setShowDeleteModal(false)
       setDeletingItem(null)
     } catch (error) {
-      console.error('Error deleting track:', error)
       toast.error('Failed to delete track')
     }
   }
@@ -406,8 +439,19 @@ const AdminPanel = () => {
         <div className='bg-[#121212] rounded-lg p-6'>
           {activeTab === 'artists' && (
             <div>
-              <div className='flex justify-between items-center mb-6'>
-                <h2 className='text-2xl font-bold'>Artists</h2>
+              <div className='flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between'>
+                <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4'>
+                  <h2 className='text-2xl font-bold'>Artists</h2>
+                  <div className='w-full sm:w-80'>
+                    <input
+                      type='text'
+                      value={artistSearch}
+                      onChange={(e) => setArtistSearch(e.target.value)}
+                      placeholder='Search by name...'
+                      className='w-full px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40'
+                    />
+                  </div>
+                </div>
                 <button
                   onClick={() => {
                     setEditingArtist(null)
@@ -424,7 +468,7 @@ const AdminPanel = () => {
               ) : (
                 <AdminTable
                   columns={artistColumns}
-                  data={artists}
+                  data={filteredArtists}
                   onEdit={(artist) => {
                     setEditingArtist(artist)
                     setShowArtistModal(true)
@@ -442,8 +486,19 @@ const AdminPanel = () => {
 
           {activeTab === 'albums' && (
             <div>
-              <div className='flex justify-between items-center mb-6'>
-                <h2 className='text-2xl font-bold'>Albums</h2>
+              <div className='flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between'>
+                <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4'>
+                  <h2 className='text-2xl font-bold'>Albums</h2>
+                  <div className='w-full sm:w-80'>
+                    <input
+                      type='text'
+                      value={albumSearch}
+                      onChange={(e) => setAlbumSearch(e.target.value)}
+                      placeholder='Search by title...'
+                      className='w-full px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40'
+                    />
+                  </div>
+                </div>
                 <button
                   onClick={() => {
                     setEditingAlbum(null)
@@ -460,7 +515,7 @@ const AdminPanel = () => {
               ) : (
                 <AdminTable
                   columns={albumColumns}
-                  data={albums}
+                  data={filteredAlbums}
                   onEdit={(album) => {
                     setEditingAlbum(album)
                     setShowAlbumModal(true)
@@ -478,8 +533,19 @@ const AdminPanel = () => {
 
           {activeTab === 'tracks' && (
             <div>
-              <div className='flex justify-between items-center mb-6'>
-                <h2 className='text-2xl font-bold'>Tracks</h2>
+              <div className='flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between'>
+                <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4'>
+                  <h2 className='text-2xl font-bold'>Tracks</h2>
+                  <div className='w-full sm:w-80'>
+                    <input
+                      type='text'
+                      value={trackSearch}
+                      onChange={(e) => setTrackSearch(e.target.value)}
+                      placeholder='Search by title...'
+                      className='w-full px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40'
+                    />
+                  </div>
+                </div>
                 <button
                   onClick={() => {
                     setEditingTrack(null)
@@ -496,7 +562,7 @@ const AdminPanel = () => {
               ) : (
                 <AdminTable
                   columns={trackColumns}
-                  data={tracks}
+                  data={filteredTracks}
                   onEdit={(track) => {
                     setEditingTrack(track)
                     setShowTrackModal(true)

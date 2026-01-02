@@ -77,3 +77,11 @@
 .scrollable-row-hover:hover::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 0.6);
 }
+
+.custom-file-input-color::file-selector-button {
+    color: white;
+}
+
+.custom-file-input-color {
+    color: white;
+}

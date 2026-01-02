@@ -2,6 +2,7 @@ package com.musify.backend.filter;
 
 import com.musify.backend.constants.ApplicationConstants;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
@@ -24,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RequiredArgsConstructor
-public class JWTTokenValidation extends OncePerRequestFilter {
+public class JWTTokenValidationFilter extends OncePerRequestFilter {
 
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private final List<String> publicPaths;
@@ -49,14 +50,20 @@ public class JWTTokenValidation extends OncePerRequestFilter {
                             String email = emailObj.toString().trim();
                             String role = roleObj.toString().trim();
                             if (!email.isEmpty() && !email.equals("null") && !role.isEmpty() && !role.equals("null")) {
+                                String roleWithPrefix = role.startsWith("ROLE_") ? role : "ROLE_" + role;
                                 Authentication authentication = new UsernamePasswordAuthenticationToken(email,
-                                        null, AuthorityUtils.commaSeparatedStringToAuthorityList(role));
+                                        null, AuthorityUtils.commaSeparatedStringToAuthorityList(roleWithPrefix));
                                 SecurityContextHolder.getContext().setAuthentication(authentication);
                             }
                         }
                     }
                 }
+            } catch (ExpiredJwtException expiredJwtException) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token Expired");
+                return;
             } catch (Exception exception) {
+                throw new BadCredentialsException("Invalid Token");
             }
         }
         filterChain.doFilter(request, response);
@@ -64,6 +71,8 @@ public class JWTTokenValidation extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        return false;
+        String path = request.getRequestURI();
+        return publicPaths.stream().anyMatch(publicPath ->
+                antPathMatcher.match(publicPath, path));
     }
 }

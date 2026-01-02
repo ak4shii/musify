@@ -12,14 +12,11 @@ public class PublicPathConfig {
     public List<String> publicPaths(){
         return List.of(
                 "/",
-                "/search/**",
+                "/search",
                 "/auth/**",
                 "/static/**",
                 "/artists/**",
-                "/albums/**",
-                "/playlists/**",
-                "/users/**",
-                "/admins/**"
+                "/albums/**"
         );
     }
 }

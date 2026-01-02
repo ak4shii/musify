@@ -1,7 +1,9 @@
 package com.musify.backend.service.impl;
 
+import com.musify.backend.dto.ArtistCreateMultipartDto;
 import com.musify.backend.dto.ArtistCreateRequestDto;
 import com.musify.backend.dto.ArtistDto;
+import com.musify.backend.dto.ArtistUpdateMultipartDto;
 import com.musify.backend.dto.ArtistUpdateRequestDto;
 import com.musify.backend.entity.Album;
 import com.musify.backend.entity.Artist;
@@ -25,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -154,6 +157,55 @@ public class ArtistServiceImpl implements IArtistService {
         return artistRepository.findAll().stream()
                 .map(this::transformToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getArtistName(Integer artistId) {
+        Artist artist = artistRepository.findById(artistId.longValue())
+                .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id " + artistId));
+        return artist.getArtistName();
+    }
+
+    @Override
+    @Transactional
+    public ArtistDto createArtistFromMultipart(ArtistCreateMultipartDto multipartDto) throws IOException {
+        if (multipartDto.getProfileImage() == null || multipartDto.getProfileImage().isEmpty()) {
+            throw new IllegalArgumentException("Profile image is required");
+        }
+
+        String profileUrl = fileStorageService.uploadArtistProfileImage(
+                multipartDto.getProfileImage(), multipartDto.getArtistName());
+
+        ArtistCreateRequestDto request = new ArtistCreateRequestDto();
+        request.setArtistName(multipartDto.getArtistName());
+        request.setBiography(multipartDto.getBiography());
+        request.setProfileUrl(profileUrl);
+
+        return createArtist(request);
+    }
+
+    @Override
+    @Transactional
+    public ArtistDto updateArtistFromMultipart(Integer artistId, ArtistUpdateMultipartDto multipartDto) throws IOException {
+        ArtistUpdateRequestDto request = new ArtistUpdateRequestDto();
+
+        if (multipartDto.getArtistName() != null) {
+            request.setArtistName(multipartDto.getArtistName());
+        }
+        if (multipartDto.getBiography() != null) {
+            request.setBiography(multipartDto.getBiography());
+        }
+
+        if (multipartDto.getProfileImage() != null && !multipartDto.getProfileImage().isEmpty()) {
+            Artist artist = artistRepository.findById(artistId.longValue())
+                    .orElseThrow(() -> new ResourceNotFoundException("Artist not found with id " + artistId));
+
+            String profileUrl = fileStorageService.uploadArtistProfileImage(
+                    multipartDto.getProfileImage(), artist.getArtistName());
+            request.setProfileUrl(profileUrl);
+        }
+
+        return updateArtist(artistId, request);
     }
 
     ArtistDto transformToDto(Artist artist) {

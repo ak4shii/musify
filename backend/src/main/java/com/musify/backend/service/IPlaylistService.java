@@ -1,9 +1,12 @@
 package com.musify.backend.service;
 
+import com.musify.backend.dto.PlaylistCreateMultipartDto;
 import com.musify.backend.dto.PlaylistDto;
+import com.musify.backend.dto.PlaylistUpdateMultipartDto;
 import com.musify.backend.dto.PlaylistUpdateRequestDto;
 import com.musify.backend.dto.TrackDto;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,5 +28,11 @@ public interface IPlaylistService {
 
     List<TrackDto> getTracksInPlaylist(Long playlistId);
 
+    List<PlaylistDto> getPublicPlaylistsForSearch(String query);
+
     void checkPlaylistOwner(Long userId, Long playlistId);
+
+    void createPlaylistFromMultipart(Long userId, PlaylistCreateMultipartDto multipartDto) throws IOException;
+
+    PlaylistDto updatePlaylistFromMultipart(Long playlistId, PlaylistUpdateMultipartDto multipartDto) throws IOException;
 }

@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import AdminTable from './AdminTable'
 import apiClient from '../../helpers/apiClient'
-import toast from 'react-hot-toast'
+import toast from '../../helpers/singleToast'
 
 const UserManagement = () => {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [userSearch, setUserSearch] = useState('')
 
   const fetchUsers = async () => {
     try {
@@ -14,9 +15,10 @@ const UserManagement = () => {
       const response = await apiClient.get('/admins/users', {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       })
-      setUsers(response.data || [])
+      const list = Array.isArray(response.data) ? response.data : []
+      list.sort((a, b) => (a?.userId ?? 0) - (b?.userId ?? 0))
+      setUsers(list)
     } catch (error) {
-      console.error('Error fetching users:', error)
       toast.error('Failed to load users')
     } finally {
       setLoading(false)
@@ -40,10 +42,15 @@ const UserManagement = () => {
       toast.success(`User ${user.enabled ? 'disabled' : 'enabled'} successfully`)
       fetchUsers()
     } catch (error) {
-      console.error('Error updating user:', error)
       toast.error('Failed to update user status')
     }
   }
+
+  const filteredUsers = users.filter((u) => {
+    const q = userSearch.trim().toLowerCase()
+    if (!q) return true
+    return String(u?.email ?? '').toLowerCase().includes(q)
+  })
 
   const columns = [
     {
@@ -112,9 +119,21 @@ const UserManagement = () => {
 
   return (
     <div>
+      <div className='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+        <div className='w-full sm:w-80'>
+          <input
+            type='text'
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder='Search by email...'
+            className='w-full px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40'
+          />
+        </div>
+      </div>
+
       <AdminTable
         columns={columns}
-        data={users}
+        data={filteredUsers}
         emptyMessage='No users found'
         getRowKey={(user) => user.userId}
       />

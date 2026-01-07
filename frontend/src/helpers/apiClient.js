@@ -17,17 +17,24 @@ apiClient.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // const unsafe = /^(post|put|patch|delete)$/i.test(config.method);
-        // const isAuthEndpoint =
-        //     config.url?.includes('/auth/login') ||
-        //     config.url?.includes('/auth/register');
+        // Send CSRF token for state-changing requests
+        const unsafe = /^(post|put|patch|delete)$/i.test(config.method);
+        const isAuthEndpoint =
+            config.url?.includes('/auth/login') ||
+            config.url?.includes('/auth/register') ||
+            config.url?.includes('/auth/logout');
 
-        // if (unsafe && !isAuthEndpoint) {
-        //     const csrf = Cookies.get('XSRF-TOKEN');
-        //     if (csrf) {
-        //         config.headers['X-CSRF-TOKEN'] = csrf;
-        //     }
-        // }
+        if (unsafe && !isAuthEndpoint) {
+            // Get CSRF token from cookie
+            const csrfToken = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('XSRF-TOKEN='))
+                ?.split('=')[1];
+
+            if (csrfToken) {
+                config.headers['X-XSRF-TOKEN'] = csrfToken;
+            }
+        }
 
         return config;
     },

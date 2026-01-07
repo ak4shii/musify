@@ -408,6 +408,20 @@ export const PlayerProvider = ({ children }) => {
     setQueue((prev) => [...prev, track]);
   }, []);
 
+  const stopAndReset = useCallback(() => {
+    const audioEl = audioRef.current;
+    if (audioEl) {
+      audioEl.pause();
+      audioEl.currentTime = 0;
+    }
+    setCurrentTrack(null);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setQueue([]);
+    setHistoryStack([]);
+  }, []);
+
   const value = useMemo(() => ({
     currentTrack,
     isPlaying,
@@ -430,7 +444,8 @@ export const PlayerProvider = ({ children }) => {
     addToQueue,
     queue,
     setQueue,
-  }), [currentTrack, isPlaying, playTrack, togglePlayPause, toggleShuffle, toggleRepeat, isShuffle, repeatMode, audioSrc, currentTime, duration, seekTo, volume, changeVolume, toggleMute, playPrevious, playNext, addToQueue, queue]);
+    stopAndReset,
+  }), [currentTrack, isPlaying, playTrack, togglePlayPause, toggleShuffle, toggleRepeat, isShuffle, repeatMode, audioSrc, currentTime, duration, seekTo, volume, changeVolume, toggleMute, playPrevious, playNext, addToQueue, queue, stopAndReset]);
 
   return (
     <PlayerContext.Provider value={value}>

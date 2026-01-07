@@ -87,7 +87,7 @@ const Search = () => {
         image: al.image ?? null
       }))
 
-      const normalizePlaylists = (pls) => (pls || []).map(p => ({
+      const normalizePlaylists = (pls) => Array.isArray(pls) ? pls.map(p => ({
         id: p.playlistId ?? p.id,
         playlistId: p.playlistId ?? p.id,
         title: p.playlistName ?? p.title ?? p.name,
@@ -97,7 +97,7 @@ const Search = () => {
         userId: p.userId ?? null,
         owner: p.userName ?? p.creator ?? (p.userId ? `User ${p.userId}` : null),
         isPublic: p.isPublic ?? p.public ?? null
-      }))
+      })) : []
 
       const results = {
         tracks: normalizeTracks(data.tracks ?? []),

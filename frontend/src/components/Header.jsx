@@ -15,9 +15,9 @@ const Header = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     stopAndReset()
-    logout()
+    await logout()
     navigate('/')
   }
 
@@ -31,7 +31,7 @@ const Header = () => {
     if (location.pathname === '/search') {
       const currentQuery = new URLSearchParams(location.search).get('q') || ''
       const trimmedQuery = searchQuery.trim()
-      
+
       if (currentQuery !== trimmedQuery) {
         const timer = setTimeout(() => {
           if (trimmedQuery) {
@@ -90,21 +90,21 @@ const Header = () => {
           {isAuthenticated ? (
             <div className='flex items-center gap-3'>
               {user?.profileUrl ? (
-                <img 
-                  src={getImageUrl(user.profileUrl)} 
-                  alt={user.userName || user.email} 
+                <img
+                  src={getImageUrl(user.profileUrl)}
+                  alt={user.userName || user.email}
                   onClick={openEditModal}
                   className='w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity'
                 />
               ) : (
-                <span 
+                <span
                   onClick={openEditModal}
                   className='text-sm text-white cursor-pointer hover:text-white/80 transition-colors'
                 >
                   {user?.userName || user?.email}
                 </span>
               )}
-              <button 
+              <button
                 onClick={handleLogout}
                 className='px-4 py-1.5 rounded-full bg-transparent border border-white/30 text-sm hover:bg-white/10 transition-colors'
               >

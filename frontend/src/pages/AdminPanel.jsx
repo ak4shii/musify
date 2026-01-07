@@ -15,24 +15,24 @@ const AdminPanel = () => {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('artists')
-  
+
   const [artists, setArtists] = useState([])
   const [artistSearch, setArtistSearch] = useState('')
   const [albums, setAlbums] = useState([])
   const [albumSearch, setAlbumSearch] = useState('')
   const [tracks, setTracks] = useState([])
   const [trackSearch, setTrackSearch] = useState('')
-  
+
   const [showArtistModal, setShowArtistModal] = useState(false)
   const [showAlbumModal, setShowAlbumModal] = useState(false)
   const [showTrackModal, setShowTrackModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  
+
   const [editingArtist, setEditingArtist] = useState(null)
   const [editingAlbum, setEditingAlbum] = useState(null)
   const [editingTrack, setEditingTrack] = useState(null)
   const [deletingItem, setDeletingItem] = useState(null)
-  
+
   const [loading, setLoading] = useState({
     artists: false,
     albums: false,
@@ -41,10 +41,10 @@ const AdminPanel = () => {
 
   const getToken = () => localStorage.getItem('token')
 
-  const handleAdminAuthError = (error) => {
+  const handleAdminAuthError = async (error) => {
     if (error?.response?.status === 401) {
       toast.error('Session expired. Please log in again.')
-      logout()
+      await logout()
       navigate('/login')
       return true
     }
@@ -61,7 +61,7 @@ const AdminPanel = () => {
       list.sort((a, b) => (a?.artistId ?? 0) - (b?.artistId ?? 0))
       setArtists(list)
     } catch (error) {
-      if (!handleAdminAuthError(error)) {
+      if (!(await handleAdminAuthError(error))) {
         toast.error(error?.response?.data?.message || error?.response?.data?.error || 'Failed to load artists')
       }
       setArtists([])
@@ -80,7 +80,7 @@ const AdminPanel = () => {
       list.sort((a, b) => (a?.albumId ?? 0) - (b?.albumId ?? 0))
       setAlbums(list)
     } catch (error) {
-      if (!handleAdminAuthError(error)) {
+      if (!(await handleAdminAuthError(error))) {
         toast.error(error?.response?.data?.message || error?.response?.data?.error || 'Failed to load albums')
       }
       setAlbums([])
@@ -99,7 +99,7 @@ const AdminPanel = () => {
       list.sort((a, b) => (a?.trackId ?? 0) - (b?.trackId ?? 0))
       setTracks(list)
     } catch (error) {
-      if (!handleAdminAuthError(error)) {
+      if (!(await handleAdminAuthError(error))) {
         toast.error(error?.response?.data?.message || error?.response?.data?.error || 'Failed to load tracks')
       }
       setTracks([])
@@ -293,7 +293,7 @@ const AdminPanel = () => {
       formDataToSend.append('genre', formData.genre)
       formDataToSend.append('duration', formData.duration)
       formData.artistIds.forEach(id => formDataToSend.append('artistIds', id))
-      
+
       if (formData.file) {
         formDataToSend.append('file', formData.file)
       }
@@ -402,8 +402,8 @@ const AdminPanel = () => {
     { id: 'users', label: 'Users' }
   ]
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate('/login')
   }
 
@@ -419,17 +419,16 @@ const AdminPanel = () => {
             Log out
           </button>
         </div>
-        
+
         <div className='flex gap-2 border-b border-white/10 mb-6'>
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 font-semibold transition-colors border-b-2 ${
-                activeTab === tab.id
-                  ? 'border-white text-white'
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
+              className={`px-6 py-3 font-semibold transition-colors border-b-2 ${activeTab === tab.id
+                ? 'border-white text-white'
+                : 'border-transparent text-gray-400 hover:text-white'
+                }`}
             >
               {tab.label}
             </button>
@@ -462,7 +461,7 @@ const AdminPanel = () => {
                   + Create Artist
                 </button>
               </div>
-              
+
               {loading.artists ? (
                 <div className='text-center py-12 text-gray-400'>Loading artists...</div>
               ) : (
@@ -509,7 +508,7 @@ const AdminPanel = () => {
                   + Create Album
                 </button>
               </div>
-              
+
               {loading.albums ? (
                 <div className='text-center py-12 text-gray-400'>Loading albums...</div>
               ) : (
@@ -556,7 +555,7 @@ const AdminPanel = () => {
                   + Create Track
                 </button>
               </div>
-              
+
               {loading.tracks ? (
                 <div className='text-center py-12 text-gray-400'>Loading tracks...</div>
               ) : (

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
+import apiClient from '../helpers/apiClient'
 
 const AuthContext = createContext(null)
 
@@ -32,21 +33,21 @@ export const AuthProvider = ({ children }) => {
     }
 
     loadUser()
-    
+
     const handleStorageChange = (e) => {
       if (e.key === 'user') {
         loadUser()
       }
     }
-    
+
     window.addEventListener('storage', handleStorageChange)
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
 
-  const login = (userData) => {
+  const login = useCallback((userData) => {
     try {
       if (typeof userData === 'object') {
         localStorage.setItem('user', JSON.stringify(userData))
@@ -54,9 +55,9 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
     }
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(async () => {
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('role')
     localStorage.removeItem('enabled')
     setUser(null)
-  }
+  }, [])
 
   const isAuthenticated = useMemo(() => {
     return user !== null && (user.userName || user.email)
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated
-  }), [user, loading, isAuthenticated])
+  }), [user, loading, login, logout, isAuthenticated])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

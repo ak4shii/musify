@@ -1,0 +1,16 @@
+target/
+.mvn/
+mvnw
+mvnw.cmd
+.git/
+.gitignore
+.gitattributes
+.idea/
+*.md
+!README.md
+.DS_Store
+*.iml
+.settings/
+.classpath
+.project
+docker-compose.yml

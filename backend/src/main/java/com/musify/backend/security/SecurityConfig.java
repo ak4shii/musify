@@ -17,7 +17,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
@@ -27,8 +26,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -40,28 +37,25 @@ public class SecurityConfig {
     @Bean
     @Order(SecurityProperties.BASIC_AUTH_ORDER)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        return http.csrf((csrfConfig) -> csrfConfig
-//                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-//                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-//                        .ignoringRequestMatchers(publicPaths.toArray(new String[0]))
-//                )
-        return http.csrf(csrf -> csrf.disable())
+        return http.csrf((csrfConfig) -> csrfConfig
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                .ignoringRequestMatchers(publicPaths.toArray(new String[0])))
                 .cors((corsConfig) -> corsConfig.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests((requests) -> {
-                    publicPaths.forEach(path ->
-                            requests.requestMatchers(path).permitAll());
+                    publicPaths.forEach(path -> requests.requestMatchers(path).permitAll());
                     requests.requestMatchers("/admins/**").hasRole("ADMIN");
                     requests.anyRequest().authenticated();
                 })
-                .addFilterBefore(new JWTTokenValidationFilter(publicPaths), org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
+                .addFilterBefore(new JWTTokenValidationFilter(publicPaths),
+                        org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
                 .anonymous((anonymous) -> anonymous.disable())
                 .exceptionHandling((exceptions) -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
                             response.getWriter().write("{\"error\":\"Unauthorized\"}");
-                        })
-                )
+                        }))
                 .formLogin((form) -> form.disable())
                 .httpBasic((basic) -> basic.disable())
                 .build();
@@ -82,9 +76,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
                 "http://localhost:5174",
-                "http://localhost:5173"
-        ));
+                "http://localhost:5173"));
         config.setAllowedMethods(Collections.singletonList("*"));
         config.setAllowedHeaders(Collections.singletonList("*"));
         config.setAllowCredentials(true);

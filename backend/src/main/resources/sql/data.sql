@@ -57,7 +57,7 @@ VALUES
     (9, 4),
     (10, 4);
 
-INSERT INTO "user" (user_id, user_name, email, password_hash, role, profile_url, date_of_birth, enabled, created_at, updated_at)
+INSERT INTO "user" (user_id, user_name, email, password_hash, role, profile_url, date_of_birth, enabled, created_at, created_by, updated_at, updated_by)
 VALUES
-    (1, 'Admin', 'admin@musify.local', '$2a$10$wq/VN1eZq9HppZArYrusLuKs64h0/pk3jfbQ3VIAtF5NCz7L3A5kK', 'ROLE_ADMIN', NULL, '1990-01-01', TRUE, NOW(), NULL)
+    (1, 'Admin', 'admin@musify.local', '$2a$10$wq/VN1eZq9HppZArYrusLuKs64h0/pk3jfbQ3VIAtF5NCz7L3A5kK', 'ROLE_ADMIN', NULL, '1990-01-01', TRUE, NOW(), 'SYSTEM ADMINISTRATOR', NULL, NULL)
 ON CONFLICT (user_id) DO NOTHING;

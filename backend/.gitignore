@@ -40,3 +40,7 @@ src/main/resources/log/
 .env
 *.log
 *.gz
+*.png
+*.jpg
+*.mp3
+*.mp4
